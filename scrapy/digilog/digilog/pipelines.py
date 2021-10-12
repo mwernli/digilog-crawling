@@ -15,10 +15,12 @@ from w3lib.url import canonicalize_url
 
 def normalize_url(s: str) -> str:
     url = parse_url(s)
+    path = '' if url.path is None else re.sub(r'/\Z', '', url.path)
+    query = '' if url.query is None else '?{}'.format(url.query)
     without_protocol = ''.join([
         url.host,
-        re.sub(r'/\Z', '', url.path),
-        '' if url.query is None else '?{}'.format(url.query)
+        re.sub(r'/\Z', '', path),
+        query
     ])
     return canonicalize_url(without_protocol)
 
