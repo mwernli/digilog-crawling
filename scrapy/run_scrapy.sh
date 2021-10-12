@@ -1,0 +1,1 @@
+docker run --rm "$1" -v "$PWD/digilog":/src --network digilog-data-network scrapy $2

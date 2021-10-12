@@ -1,0 +1,39 @@
+version: "3.7"
+services:
+  database:
+    image: postgres:13.0
+    container_name: digilog-postgres
+    restart: always
+    ports:
+      - 5500:5432
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_USER: digilog
+      POSTGRES_DB: digilog
+    volumes:
+      - $PWD/postgres/.db:/var/lib/postgresql/data
+    
+  flyway:
+    image: flyway/flyway:8.0.0
+    container_name: flyway
+    command: -url="jdbc:postgresql://digilog-postgres:5432/" -user=digilog -password=password -connectRetries=60 -schemas=digilog -baselineOnMigrate=true migrate
+    volumes:
+      - $PWD/postgres/flywaymigrations:/flyway/sql
+    depends_on:
+      - database
+  
+  mongo:
+    image: mongo
+    container_name: digilog-mongodb
+    restart: always
+    ports:
+      - 5550:27017
+    volumes:
+      - $PWD/mongodb/.db:/etc/mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: mongopwd
+
+networks:
+  default:
+    name: digilog-data-network
