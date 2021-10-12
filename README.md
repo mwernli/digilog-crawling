@@ -2,7 +2,7 @@
 Crawler &amp; Data Storage for the digilog project
 
 ## Setup
-After every pull, run the following commands from the repositories root directory:
+After every pull, run the following commands from the repository's root directory:
 ```
 docker-compose up -d
 cd scrapy/
