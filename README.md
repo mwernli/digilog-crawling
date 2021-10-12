@@ -38,6 +38,9 @@ where `MODE` is one of the following (see also [official docker documentation](h
 
 Note that the `URL` must include the protocol (http[s]://).
 
+Additionally, any further configuration settings can be passed to scrapy with the syntax `-s SETTING_KEY1=value1 SETTING_KEY2=value2`, as documented [here](https://docs.scrapy.org/en/latest/topics/settings.html).
+For example, use `-s DEPTH_LIMIT=3` to limit the depth of the crawl on large websites.
+
 You can also use the convenience script in the scrapy folder like this:
 ```
 ./simple_crawl.sh MODE URL
@@ -46,6 +49,7 @@ e.g.
 ```
 ./simple_crawl.sh -d http://quotes.toscrape.com/
 ```
+The script applies a DEPTH_LIMIT of 3.
 ### Crawling results
 Each crawl will generate a unique record in the `crawl` table including its url and a timestamp. Then, each crawled URL will generate a record in the `crawl_result` table, including the URL, the text of the link on the page a reference to the `crawl` and to its parent page (also in `crawl_result`). The column `mongo_id` contains the `ObjectId` of the mongo-DB-Document where the actual content of the webpage is stored (database `digilog`, collection `simpleresults`). Some metadata like the `crawl_id` and `result_id` from postgres are also stored for convenience.
 
