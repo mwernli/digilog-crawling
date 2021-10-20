@@ -11,18 +11,25 @@ import re
 from .DataSource import DataSource
 from urllib3.util import parse_url
 from w3lib.url import canonicalize_url
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def normalize_url(s: str) -> str:
-    url = parse_url(s)
-    path = '' if url.path is None else re.sub(r'/\Z', '', url.path)
-    query = '' if url.query is None else '?{}'.format(url.query)
-    without_protocol = ''.join([
-        url.host,
-        re.sub(r'/\Z', '', path),
-        query
-    ])
-    return canonicalize_url(without_protocol)
+    try:
+        url = parse_url(s)
+        path = '' if url.path is None else re.sub(r'/\Z', '', url.path)
+        query = '' if url.query is None else '?{}'.format(url.query)
+        without_protocol = ''.join([
+            url.host,
+            re.sub(r'/\Z', '', path),
+            query
+        ])
+        return canonicalize_url(without_protocol)
+    except Exception as e:
+        logger.exception('Unable to normalize input URL {}'.format(s))
+        return s
 
 
 class SimplePipeline:
@@ -35,7 +42,7 @@ class SimplePipeline:
         self.ds = DataSource()
         url = normalize_url(spider.url)
         self.crawl_id = self.ds.postgres.insert_crawl(url)
-        print("inserted new crawl with ID: {}".format(self.crawl_id))
+        logger.info("inserted new crawl with ID: {}".format(self.crawl_id))
         head_id = self.ds.postgres.insert_first_result_record(self.crawl_id, url)
         self.url_dict[url] = head_id
 
@@ -45,7 +52,7 @@ class SimplePipeline:
         if url in self.url_dict:
             parent_id = self.url_dict[url]
         else:
-            print("WARNING: parent URL not found: {} in {}".format(url, self.url_dict))
+            logger.warning("WARNING: parent URL not found: {} in {}".format(url, self.url_dict))
             parent_id = None
         mongo_id = self.ds.mongodb.insert_crawl_result(self.crawl_id, parent_id, item['html'], item['raw_text'])
         self.ds.postgres.update_mongo_id(parent_id, str(mongo_id))
@@ -53,5 +60,5 @@ class SimplePipeline:
         self.url_dict.update(children)
 
     def close_spider(self, spider):
-        print("closing")
+        logger.info("closing data connections")
         self.ds.close()
