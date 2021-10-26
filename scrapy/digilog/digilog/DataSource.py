@@ -25,9 +25,13 @@ class DataSource:
 
 
 class PostgresConnection:
-    def __init__(self):
-        self.host = 'digilog-postgres'
-        self.port = 5432
+    def __init__(self, called_from_container:bool = True):
+        if called_from_container:
+            self.host = 'digilog-postgres'
+            self.port = 5432
+        else:
+            self.host = 'localhost'
+            self.port = 5500
         self.user = 'digilog'
         self.password = 'password'
         self.db = 'digilog'
@@ -108,9 +112,13 @@ class PostgresConnection:
 
 
 class MongoDbConnection:
-    def __init__(self):
-        self.host = 'digilog-mongodb'
-        self.port = 27017
+    def __init__(self, called_from_container:bool = True):
+        if called_from_container:
+            self.host = 'digilog-mongodb'
+            self.port = 27017
+        else:
+            self.host = 'localhost'
+            self.port = 5550
         self.user = 'root'
         self.password = 'mongopwd'
         self.connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
