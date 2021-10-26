@@ -11,6 +11,7 @@ class SimpleSpider(scrapy.Spider):
     def __init__(self, url=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.domain = '.'.join(parse_url(url).host.split('.')[-2:])
+        self.logger.info('Initialized crawler "{}" on domain "{}"'.format(self.name, self.domain))
         self.link_extractor = LxmlLinkExtractor(allow_domains=[self.domain])
         self.url = url
 
@@ -22,6 +23,8 @@ class SimpleSpider(scrapy.Spider):
         soup = BeautifulSoup(html, 'html.parser')
         raw_text = soup.get_text()
         url = response.request.url
+        depth = response.request.meta['depth']
+        self.logger.info('parsing URL {} at depth {}'.format(url, depth))
 
         links = self.link_extractor.extract_links(response)
 

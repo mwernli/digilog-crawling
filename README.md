@@ -26,6 +26,13 @@ To make changes to the postgres schema or add masterdata follow these steps:
 * Make changes to schema and masterdata only through flyway migrations. This way, the postgres database can be setup anew on any machine where the project should run. It also guarantees that future migrations commited by other users will work on your local development database and the database on the server.
 * Before pushing migrations to the upstream, make sure your local repository is up to date. Otherwise the order of migration files might not be correct anymore.
 
+## Connecting to the PostgreSQL-DB
+
+Run the following command to connect to the PostgreSQL-DB:
+```
+docker exec -it digilog-postgres psql postgresql://digilog@localhost/digilog
+```
+
 ## Crawling
 ### Running a crawl
 Use the scrapy-image built above to run a crawl of a webpage like so:
