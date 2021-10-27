@@ -10,17 +10,29 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_USER: digilog
       POSTGRES_DB: digilog
+    depends_on:
+      - fluentd      
     volumes:
-      - $PWD/postgres/.db:/var/lib/postgresql/data
+      - ./postgres/.db:/var/lib/postgresql/data
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "localhost:24224"
+        tag: "postgres-db"
     
   flyway:
     image: flyway/flyway:8.0.0
-    container_name: flyway
+    container_name: digilog-flyway
     command: -url="jdbc:postgresql://digilog-postgres:5432/" -user=digilog -password=password -connectRetries=60 -schemas=digilog -baselineOnMigrate=true migrate
     volumes:
-      - $PWD/postgres/flywaymigrations:/flyway/sql
+      - ./postgres/flywaymigrations:/flyway/sql
     depends_on:
       - database
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "localhost:24224"
+        tag: "flyway"
   
   mongo:
     image: mongo
@@ -29,10 +41,56 @@ services:
     ports:
       - 5550:27017
     volumes:
-      - $PWD/mongodb/.db:/etc/mongo
+      - ./mongodb/.db:/etc/mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: mongopwd
+    depends_on:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "localhost:24224"
+        tag: "mongo-db"
+  
+  fluentd:
+    build: ./fluentd
+    container_name: digilog-fluentd
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+    links:
+      - "elasticsearch"
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    depends_on:
+      - elasticsearch      
+
+  elasticsearch:      
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.2
+    container_name: digilog-elasticsearch
+    environment:
+      - "discovery.type=single-node"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    expose:
+      - "9200"
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.14.2
+    container_name: digilog-kibana
+    links:
+      - "elasticsearch"
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+volumes:
+  esdata:
+    driver: local
 
 networks:
   default:
