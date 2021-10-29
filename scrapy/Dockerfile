@@ -13,6 +13,4 @@ RUN pip install --upgrade pip && pip install --no-warn-script-location --user -r
 
 WORKDIR /src
 
-ENTRYPOINT ["/home/crawluser/.local/bin/scrapy"]
-
-CMD ["shell"]
+ENTRYPOINT ["python", "/src/run_crawl.py"]

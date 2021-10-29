@@ -24,11 +24,10 @@ class SimpleSpider(scrapy.Spider):
         raw_text = soup.get_text()
         url = response.request.url
         depth = response.request.meta['depth']
-        self.logger.info('parsing URL {} at depth {}'.format(url, depth))
 
         links = self.link_extractor.extract_links(response)
 
-        yield RawItem(html=html, raw_text=raw_text, url=url, links=links)
+        yield RawItem(html=html, raw_text=raw_text, url=url, links=links, depth=depth)
 
         for link in links:
             yield response.follow(link, self.parse)

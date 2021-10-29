@@ -12,3 +12,4 @@ class RawItem(scrapy.Item):
     raw_text = scrapy.Field()
     url = scrapy.Field()
     links = scrapy.Field()
+    depth = scrapy.Field()

@@ -42,7 +42,7 @@ class SimplePipeline:
         self.ds = DataSource()
         url = normalize_url(spider.url)
         self.crawl_id = self.ds.postgres.insert_crawl(url)
-        logger.info("inserted new crawl with ID: {}".format(self.crawl_id))
+        logger.info("Inserted new crawl with ID: {}".format(self.crawl_id))
         head_id = self.ds.postgres.insert_first_result_record(self.crawl_id, url)
         self.url_dict[url] = head_id
 
@@ -52,7 +52,7 @@ class SimplePipeline:
         if url in self.url_dict:
             parent_id = self.url_dict[url]
         else:
-            logger.warning("WARNING: parent URL not found: {} in {}".format(url, self.url_dict))
+            logger.warning("WARNING: Parent URL not found: {} in {}".format(url, self.url_dict))
             parent_id = None
         mongo_id = self.ds.mongodb.insert_crawl_result(self.crawl_id, parent_id, item['html'], item['raw_text'])
         self.ds.postgres.update_mongo_id(parent_id, str(mongo_id))
@@ -60,5 +60,5 @@ class SimplePipeline:
         self.url_dict.update(children)
 
     def close_spider(self, spider):
-        logger.info("closing data connections")
+        logger.info("Closing data connections")
         self.ds.close()
