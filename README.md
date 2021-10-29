@@ -32,18 +32,20 @@ Run the following command to connect to the PostgreSQL-DB:
 ```
 docker exec -it digilog-postgres psql postgresql://digilog@localhost/digilog
 ```
-
+## Logging
+All logs go to Kibana via Dockers fluentd-driver. Navigate to http://localhost:5601 to inspect the logs. Filter for 
+@log_name to see the log output of a container of a specific image (postgres-db, flyway, mongo-db, scrapy).
 ## Crawling
 ### Running a crawl
 Use the scrapy-image built above to run a crawl of a webpage like so:
 ```
-docker run --rm MODE -v "$PWD/digilog":/src --network digilog-data-network scrapy crawl simple -a url=URL
+docker run --rm <MODE> -v "$PWD/digilog":/src --network digilog-data-network --log-driver fluentd --log-opt fluentd-address="localhost:24224" --log-opt tag="scrapy" scrapy simple <URL>
 ```
-where `MODE` is one of the following (see also [official docker documentation](https://docs.docker.com/engine/reference/run/)):
+where `<MODE>` is one of the following (see also [official docker documentation](https://docs.docker.com/engine/reference/run/)):
 * `-d` will run the container in the background. Check the status of the running container with `docker ps`, or use `docker attach` to connect to the container and check the generated debug output.
 * `-it` will run the container in interactive mode and will print all generated output directly on your console.
 
-Note that the `URL` must include the protocol (http[s]://).
+Note that the `<URL>` must include the protocol (http[s]://).
 
 Additionally, any further configuration settings can be passed to scrapy with the syntax `-s SETTING_KEY1=value1 SETTING_KEY2=value2`, as documented [here](https://docs.scrapy.org/en/latest/topics/settings.html).
 For example, use `-s DEPTH_LIMIT=3` to limit the depth of the crawl on large websites.
@@ -56,7 +58,7 @@ e.g.
 ```
 ./simple_crawl.sh -d http://quotes.toscrape.com/
 ```
-The script applies a DEPTH_LIMIT of 3.
+The script applies a DEPTH_LIMIT of 2.
 ### Crawling results
 Each crawl will generate a unique record in the `crawl` table including its url and a timestamp. Then, each crawled URL will generate a record in the `crawl_result` table, including the URL, the text of the link on the page a reference to the `crawl` and to its parent page (also in `crawl_result`). The column `mongo_id` contains the `ObjectId` of the mongo-DB-Document where the actual content of the webpage is stored (database `digilog`, collection `simpleresults`). Some metadata like the `crawl_id` and `result_id` from postgres are also stored for convenience.
 
