@@ -6,5 +6,5 @@ CREATE TABLE digilog.local_gov_ch(
 	population	int,
 	elevation	varchar,
 	area		varchar,
-	postalCode	int
+	postalCode	varchar
 );
