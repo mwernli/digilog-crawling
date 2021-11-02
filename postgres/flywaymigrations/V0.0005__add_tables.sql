@@ -7,7 +7,7 @@ CREATE TABLE digilog.loc_gov_ch(
 	population	int,
 	elevation		varchar,
 	area				varchar,
-	postalCode	varchar,
+	postalcode	varchar,
 	gdekt				varchar,
 	gdebznr			int,
 	gdenr				int,
