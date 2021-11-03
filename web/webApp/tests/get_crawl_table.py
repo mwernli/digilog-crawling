@@ -7,6 +7,9 @@ def get_crawl_table():
         if bool(int(os.environ['OUTSIDE_NETWORK'])):
             host = 'localhost'
             port = '5500'
+        else:
+            host = 'digilog-postgres'
+            port = '5432'
     except KeyError:
         host = 'digilog-postgres'
         port = '5432'
