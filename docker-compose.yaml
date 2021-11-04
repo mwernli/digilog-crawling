@@ -41,7 +41,7 @@ services:
     ports:
       - 5550:27017
     volumes:
-      - mongodbdata:/etc/mongo
+      - mongodbdata:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: mongopwd
