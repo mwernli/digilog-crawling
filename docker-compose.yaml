@@ -13,7 +13,7 @@ services:
     depends_on:
       - fluentd      
     volumes:
-      - ./postgres/.db:/var/lib/postgresql/data
+      - postgresdata:/var/lib/postgresql/data
     logging:
       driver: "fluentd"
       options:
@@ -41,7 +41,7 @@ services:
     ports:
       - 5550:27017
     volumes:
-      - ./mongodb/.db:/etc/mongo
+      - mongodbdata:/data/db
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: mongopwd
@@ -95,12 +95,19 @@ services:
     ports:
       - 80:80
     depends_on:
-      - fluentd      
+      - fluentd
 
 
 volumes:
   esdata:
     driver: local
+    name: digilog-volume-elasticsearch
+  postgresdata:
+    driver: local
+    name: digilog-volume-postgres
+  mongodbdata:
+    driver: local
+    name: digilog-volume-mongodb
 
 networks:
   default:
