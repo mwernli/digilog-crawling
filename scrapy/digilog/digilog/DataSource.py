@@ -14,6 +14,16 @@ def condense(s: str) -> str:
     return _CONDENSE_WS_PATTERN.sub(' ', s).strip()
 
 
+class DataSourceContext:
+    def __enter__(self):
+        self._ds = DataSource()
+        return self._ds
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._ds.close()
+        del self._ds
+
+
 class DataSource:
     def __init__(self):
         self.postgres = PostgresConnection()
