@@ -1,6 +1,8 @@
 import scrapy
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from urllib3.util import parse_url
+
+from ..DataSource import DataSource
 from ..items import RawItem
 from bs4 import BeautifulSoup
 
@@ -10,6 +12,7 @@ class SimpleSpider(scrapy.Spider):
 
     def __init__(self, url=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.ds = DataSource()
         self.domain = '.'.join(parse_url(url).host.split('.')[-2:])
         self.logger.info('Initialized crawler "{}" on domain "{}"'.format(self.name, self.domain))
         self.link_extractor = LxmlLinkExtractor(allow_domains=[self.domain])

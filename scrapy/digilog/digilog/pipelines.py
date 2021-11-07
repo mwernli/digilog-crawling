@@ -8,7 +8,6 @@
 from itemadapter import ItemAdapter
 
 import re
-from .DataSource import DataSource
 from urllib3.util import parse_url
 from w3lib.url import canonicalize_url
 import logging
@@ -34,16 +33,14 @@ def normalize_url(s: str) -> str:
 
 class SimplePipeline:
     def __init__(self):
-        self.ds = None
         self.crawl_id = None
         self.url_dict = {}
 
     def open_spider(self, spider):
-        self.ds = DataSource()
         url = normalize_url(spider.url)
-        self.crawl_id = self.ds.postgres.insert_crawl(url)
+        self.crawl_id = spider.ds.postgres.insert_crawl(url)
         logger.info("Inserted new crawl with ID: {}".format(self.crawl_id))
-        head_id = self.ds.postgres.insert_first_result_record(self.crawl_id, url)
+        head_id = spider.ds.postgres.insert_first_result_record(self.crawl_id, url)
         self.url_dict[url] = head_id
 
     def process_item(self, item, spider):
@@ -54,11 +51,11 @@ class SimplePipeline:
         else:
             logger.warning("WARNING: Parent URL not found: {} in {}".format(url, self.url_dict))
             parent_id = None
-        mongo_id = self.ds.mongodb.insert_crawl_result(self.crawl_id, parent_id, item['html'], item['raw_text'])
-        self.ds.postgres.update_mongo_id(parent_id, str(mongo_id))
-        children = self.ds.postgres.insert_child_links(self.crawl_id, parent_id, links, normalize_url)
+        mongo_id = spider.ds.mongodb.insert_crawl_result(self.crawl_id, parent_id, item['html'], item['raw_text'])
+        spider.ds.postgres.update_mongo_id(parent_id, str(mongo_id))
+        children = spider.ds.postgres.insert_child_links(self.crawl_id, parent_id, links, normalize_url)
         self.url_dict.update(children)
 
     def close_spider(self, spider):
         logger.info("Closing data connections")
-        self.ds.close()
+        spider.ds.close()
