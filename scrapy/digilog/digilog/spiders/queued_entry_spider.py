@@ -2,21 +2,23 @@ import scrapy
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from urllib3.util import parse_url
 
-from ..DataSource import DataSource
+from ..DataSource import DataSource, QueueStatus
 from ..items import RawItem
 from bs4 import BeautifulSoup
 
 
-class SimpleSpider(scrapy.Spider):
-    name = 'simple'
+class QueuedEntrySpider(scrapy.Spider):
+    name = 'queued'
 
-    def __init__(self, url=None, *args, **kwargs):
+    def __init__(self, queue_id=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ds = DataSource()
-        self.domain = '.'.join(parse_url(url).host.split('.')[-2:])
-        self.logger.info('Initialized crawler "{}" on domain "{}"'.format(self.name, self.domain))
+        self.queue_entry = self.ds.postgres.get_queue_entry_by_id(queue_id)
+        self.ds.postgres.update_queue_status(queue_id, QueueStatus.IN_PROGRESS)
+        self.domain = '.'.join(parse_url(self.queue_entry.url).host.split('.')[-2:])
+        self.logger.info('Initialized queued crawler for id {} on domain "{}"'.format(self.queue_entry.id, self.domain))
         self.link_extractor = LxmlLinkExtractor(allow_domains=[self.domain])
-        self.url = url
+        self.url = self.queue_entry.url
 
     def start_requests(self):
         yield scrapy.Request(self.url)
@@ -37,4 +39,6 @@ class SimpleSpider(scrapy.Spider):
 
     def closed(self, reason):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
+        status = QueueStatus.DONE if reason == 'finished' else QueueStatus.ERROR
+        self.ds.postgres.update_queue_status(self.queue_entry.id, status, reason)
         self.ds.close()

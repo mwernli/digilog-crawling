@@ -42,6 +42,8 @@ class SimplePipeline:
         logger.info("Inserted new crawl with ID: {}".format(self.crawl_id))
         head_id = spider.ds.postgres.insert_first_result_record(self.crawl_id, url)
         self.url_dict[url] = head_id
+        if spider.queue_entry is not None:
+            spider.ds.postgres.insert_queue_crawl_connection(spider.queue_entry.id, self.crawl_id)
 
     def process_item(self, item, spider):
         url = normalize_url(item['url'])
@@ -55,7 +57,3 @@ class SimplePipeline:
         spider.ds.postgres.update_mongo_id(parent_id, str(mongo_id))
         children = spider.ds.postgres.insert_child_links(self.crawl_id, parent_id, links, normalize_url)
         self.url_dict.update(children)
-
-    def close_spider(self, spider):
-        logger.info("Closing data connections")
-        spider.ds.close()

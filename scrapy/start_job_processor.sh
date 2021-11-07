@@ -1,7 +1,7 @@
 docker \
   run \
   --rm \
-  -it \
+  -d \
   -v "$PWD/digilog":/src \
   --network digilog-data-network \
   --log-driver fluentd \
