@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from enum import Enum
 from typing import List, Dict, Callable
 
 import psycopg2
@@ -12,6 +14,19 @@ _CONDENSE_WS_PATTERN = re.compile(r'\s+')
 
 def condense(s: str) -> str:
     return _CONDENSE_WS_PATTERN.sub(' ', s).strip()
+
+
+@dataclass(frozen=True)
+class QueueEntry:
+    id: int
+    url: str
+
+
+class QueueStatus(Enum):
+    NEW = 'NEW'
+    IN_PROGRESS = 'IN_PROGRESS'
+    DONE = 'DONE'
+    ERROR = 'ERROR'
 
 
 class DataSource:
@@ -62,6 +77,17 @@ class PostgresConnection:
                 result = cursor.fetchone()[0]
                 return result
 
+    def insert_queue_crawl_connection(self, queue_id: int, crawl_id: int):
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO queue_crawl (queue_id, crawl_id)
+                    VALUES (%s, %s)
+                    """,
+                    (queue_id, crawl_id)
+                )
+
     def insert_first_result_record(self, crawl_id: int, url: str) -> int:
         with self.connection as connection:
             with connection.cursor() as cursor:
@@ -107,6 +133,48 @@ class PostgresConnection:
                     (mongo_id, result_id)
                 )
 
+    def load_new_queue_entries(self, max_entries: int = 10) -> List[QueueEntry]:
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, top_url
+                    FROM crawling_queue
+                    WHERE status = 'NEW'
+                    ORDER BY priority
+                    LIMIT %s
+                    """,
+                    (max_entries,)
+                )
+                result = cursor.fetchall()
+                return [QueueEntry(row[0], row[1]) for row in result]
+
+    def get_queue_entry_by_id(self, id: int) -> QueueEntry:
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT id, top_url
+                    FROM crawling_queue
+                    WHERE id = %s
+                    """,
+                    (id,)
+                )
+                result = cursor.fetchone()
+                return QueueEntry(result[0], result[1])
+
+    def update_queue_status(self, id: int, status: QueueStatus, reason: str = ''):
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE crawling_queue
+                    SET status = %s, updated_at = now(), reason = %s
+                    WHERE id = %s
+                    """,
+                    (status.value, reason, id)
+                )
+
     def close(self):
         self.connection.close()
 
@@ -137,3 +205,13 @@ class MongoDbConnection:
 
     def close(self):
         self.client.close()
+
+
+class DataSourceContext:
+    def __enter__(self) -> DataSource:
+        self._ds = DataSource()
+        return self._ds
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._ds.close()
+        del self._ds
