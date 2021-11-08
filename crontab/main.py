@@ -57,11 +57,11 @@ if __name__ == '__main__':
             urls[i] = 'http://'+ urls[i]
 
     urls = [(url) for url in urls if bool(re.search('wikipedia', url)) != True]
-
+    # urls = ['http://www.hittnau.ch']
 
     os.chdir(os.path.join(os.getcwd(), '../scrapy'))
     with multiprocessing.Pool(5) as pool:
-        for i in pool.imap_unordered(do_logging, urls[:1]):
+        for i in pool.imap_unordered(run_crawling, urls[:10]):
             pass
             # print(i)
     os.chdir(os.path.join(os.getcwd(), '../crontab'))
