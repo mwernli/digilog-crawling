@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 from sqlalchemy import create_engine
 import pandas as pd
 import os
@@ -8,6 +9,7 @@ import multiprocessing
 from multiprocessing import log_to_stderr, get_logger
 import time
 import numpy as np
+import subprocess
 logging.NOTSET = 1
 
 
@@ -38,18 +40,31 @@ def do_logging(secs):
     logger.info(str(secs))
     # print(str(secs))
     
+def run_crawling(url):
+    subprocess.run(['sudo','sh', './simple_crawl.sh', '-it', url])
+    
 
 
 if __name__ == '__main__':
-    ar = [5,4,1]
-    # print(ar)
-    # do_logging(0)
-    # logger.info('start process')
+    df = get_gde_url()
+    urls = [url for url in df.url.values]
+    url_bools = [bool(re.match('http://', url)) or bool(re.match('https://', url)) for url in urls]
 
+    for i in range(len(urls)):
+        if url_bools[i]:
+            pass
+        else:
+            urls[i] = 'http://'+ urls[i]
+
+    urls = [(url) for url in urls if bool(re.search('wikipedia', url)) != True]
+
+
+    os.chdir(os.path.join(os.getcwd(), '../scrapy'))
     with multiprocessing.Pool(5) as pool:
-        for i in pool.imap_unordered(do_logging, ar):
+        for i in pool.imap_unordered(do_logging, urls[:1]):
             pass
             # print(i)
+    os.chdir(os.path.join(os.getcwd(), '../crontab'))
 
     # logger.info('end process')
 
