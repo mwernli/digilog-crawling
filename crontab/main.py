@@ -14,6 +14,7 @@ logging.NOTSET = 1
 
 
 os.environ['OUTSIDE_NETWORK'] = '1'
+os.chdir('/home/ubuntu/digilog/digilog-crawling/crontab')
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -41,7 +42,7 @@ def do_logging(secs):
     # print(str(secs))
     
 def run_crawling(url):
-    subprocess.run(['sudo','sh', './simple_crawl.sh', '-it', url])
+    subprocess.run(['sudo','sh', './simple_crawl.sh', '-t', url])
     
 
 
