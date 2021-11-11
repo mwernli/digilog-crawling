@@ -47,7 +47,10 @@ for crawl_id in range(start_crawl_id, end_crawl_id + 1):
     print(f'analyzing crawl: {crawl_id-start_crawl_id +1}/{end_crawl_id-start_crawl_id +1}')
     for page_i in progressbar(range(len(page_list))):
         # text = page['raw_text']
-        doc = nlp(page_list[page_i]['raw_text'])
+        if len(page_list[page_i]['raw_text'] < 10**6):
+            doc = nlp(page_list[page_i]['raw_text'])
+        else:
+            continue
         ########
         # text = ' '.join([pate['raw_text'] for page in page_list])
         # doc = nlp(text)
