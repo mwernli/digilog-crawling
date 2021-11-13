@@ -67,7 +67,9 @@ def run_queued(args):
         settings.set(key, value)
     log_level = settings.get('LOG_LEVEL')
     handler = logging.StreamHandler()
-    handler.setFormatter(NewlineRemovingFormatter(settings.get('LOG_FORMAT'), settings.get('LOG_DATEFORMAT')))
+    configured_log_format = str(settings.get('LOG_FORMAT'))
+    queued_log_format = configured_log_format.replace('%(asctime)s', '%(asctime)s [QueueEntry {}]'.format(args.id))
+    handler.setFormatter(NewlineRemovingFormatter(queued_log_format, settings.get('LOG_DATEFORMAT')))
     handler.setLevel(log_level)
     logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
 
