@@ -18,6 +18,7 @@ logger.setLevel(logging.INFO)
 class RunOptions:
     parallel_count: int
     delay_when_empty_seconds: int
+    loading_chung_size: int
 
 
 def process_entry(entry: QueueEntry):
@@ -30,21 +31,19 @@ async def process_queue():
             options = get_run_options()
             queue_entries = get_queue_entries(ds)
             if len(queue_entries) == 0:
-                logger.info('No queue entries')  # TODO better format for log output
+                logger.info('No queue entries')
                 await asyncio.sleep(options.delay_when_empty_seconds)
             else:
                 with Pool(options.parallel_count) as p:
                     p.map(process_entry, queue_entries)
 
 
-# TODO add run options table in database and load from there
 def get_run_options():
-    return RunOptions(3, 30)
+    return RunOptions(parallel_count=3, delay_when_empty_seconds=30, loading_chung_size=6)
 
 
-# TODO logging?
-def get_queue_entries(ds: DataSource) -> List[QueueEntry]:
-    return ds.postgres.load_new_queue_entries()
+def get_queue_entries(ds: DataSource, max_entries: int) -> List[QueueEntry]:
+    return ds.postgres.load_new_queue_entries(max_entries)
 
 
 if __name__ == '__main__':
