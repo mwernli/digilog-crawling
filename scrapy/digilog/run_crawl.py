@@ -76,7 +76,7 @@ def run_queued(args):
     process.crawl('queued', queue_id=args.id)
     process.start()  # the script will block here until the crawling is finished
 
+
 if __name__ == '__main__':
     parsed_args = parse_args(sys.argv[1:])
-    print(parsed_args)
     parsed_args.func(parsed_args)
