@@ -6,6 +6,7 @@ from spaczz.matcher import FuzzyMatcher
 import numpy as np
 import logging
 import os
+from progressbar import progressbar
 
 nlp = spacy.load('de_core_news_sm')
 ds = DataSourceSlim()
@@ -37,28 +38,50 @@ print(end_crawl_id)
 
 for crawl_id in range(start_crawl_id, end_crawl_id + 1):    
     result = ds.mongo.db.simpleresults.find({'crawl_id': crawl_id})
-    obj = [item for item in result]
+    page_list = [item for item in result]
     analysis_doc = {}
-
-    doc = ' '.join([nlp(page['raw_text']) for page in obj])
-    matcher = FuzzyMatcher(nlp.vocab)
-        
     for keyword in KEYWORDLIST:
-        analysis_doc[keyword.lower()] = {}
-        matcher.add("NOUN", [nlp(keyword)])
-        matches = matcher(doc)
-        analysis_doc[keyword.lower()]['count'] = len(matches)
-        analysis_doc[keyword.lower()]['match_ratio'] = [(doc[start:end], ratio) for match_id, start, end, ratio in matches]
-        tmp_ar = np.array(analysis_doc[keyword.lower()]['match_ratio'])
-        analysis_doc[keyword.lower()]['mean'] = tmp_ar[:,1].mean()
-        analysis_doc[keyword.lower()]['median'] = np.median(tmp_ar[:,1])
-        matcher.remove('NOUN')
+        analysis_doc[keyword.lower()] =  {}
+        analysis_doc[keyword.lower()]['count'] = 0
+        analysis_doc[keyword.lower()]['match_ratio'] = []
+    print(f'analyzing crawl: {crawl_id-start_crawl_id +1}/{end_crawl_id-start_crawl_id +1}')
+    pages_n = len(page_list)
+    for page_i in progressbar(range(len(page_list))):
+        # text = page['raw_text']
+        if len(page_list[page_i]['raw_text']) < 10**6:
+            doc = nlp(page_list[page_i]['raw_text'])
+        else:
+            continue
+        ########
+        # text = ' '.join([pate['raw_text'] for page in page_list])
+        # doc = nlp(text)
+        matcher = FuzzyMatcher(nlp.vocab)
+        
+        for keyword in KEYWORDLIST:
+            # analysis_doc[keyword.lower()] = {}
+            matcher.add("NOUN", [nlp(keyword)])
+            matches = matcher(doc)
+            analysis_doc[keyword.lower()]['count'] += len(matches)
+            if len(matches) > 0:
+                analysis_doc[keyword.lower()]['match_ratio'] += [(doc[start:end], ratio) for match_id, start, end, ratio in matches]
+            matcher.remove('NOUN')
 
-        
-        
+
+    for keyword in KEYWORDLIST:   
+        tmp_ar = np.array(analysis_doc[keyword.lower()]['match_ratio'])
+        if analysis_doc[keyword.lower()]['count'] > 0:
+            analysis_doc[keyword.lower()]['mean'] = tmp_ar[:,1].mean()
+            analysis_doc[keyword.lower()]['median'] = np.median(tmp_ar[:,1])
+        else:
+            analysis_doc[keyword.lower()]['mean'] = 0
+            analysis_doc[keyword.lower()]['median'] = 0
+    analysis_doc['links_n'] = pages_n
         
     # result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
-    logger.info(f'crawl {crawl_id} analyzed in document {result}')
+    # logger.info(f'crawl {crawl_id} analyzed in document {result}')
+    del result
+    del page_list
+
 
 # ###############
 

@@ -4,11 +4,14 @@ from spacy.util import filter_spans
 from DataSourceSlim import DataSourceSlim
 from spaczz.matcher import FuzzyMatcher
 import numpy as np
+import pandas as pd
 import logging
 import os
 from progressbar import progressbar
 
 nlp = spacy.load('de_core_news_sm')
+nlp.max_length = 2*10**6 
+
 ds = DataSourceSlim()
 KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung']
 
@@ -33,53 +36,56 @@ else:
 
 end_crawl_id = ds.postgres.interact_postgres('SELECT id FROM crawl ORDER BY id DESC LIMIT 1;')[0][0]
 
-print(start_crawl_id)
-print(end_crawl_id)
+# print(start_crawl_id)
+# print(end_crawl_id)
 
-for crawl_id in range(start_crawl_id, end_crawl_id + 1):    
+for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):    
+# for crawl_id in [1]: 
     result = ds.mongo.db.simpleresults.find({'crawl_id': crawl_id})
-    page_list = [item for item in result]
+    obj = [item for item in result]
+    pages_n = len(obj)
     analysis_doc = {}
-    for keyword in KEYWORDLIST:
-        analysis_doc[keyword.lower()] =  {}
-        analysis_doc[keyword.lower()]['count'] = 0
-        analysis_doc[keyword.lower()]['match_ratio'] = []
-    print(f'analyzing crawl: {crawl_id-start_crawl_id +1}/{end_crawl_id-start_crawl_id +1}')
-    for page_i in progressbar(range(len(page_list))):
-        # text = page['raw_text']
-        if len(page_list[page_i]['raw_text'] < 10**6):
-            doc = nlp(page_list[page_i]['raw_text'])
-        else:
-            continue
-        ########
-        # text = ' '.join([pate['raw_text'] for page in page_list])
-        # doc = nlp(text)
-        matcher = FuzzyMatcher(nlp.vocab)
+    analysis_doc['links_n'] = pages_n
+    analysis_doc['crawl_id'] = crawl_id
+    doc = nlp(' '.join([token.text
+                    for page in obj
+                    if len(page['raw_text']) < 5*10**4
+                    for token in nlp(page['raw_text'])
+                    if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X']))
+    matcher = FuzzyMatcher(nlp.vocab)
         
-        for keyword in KEYWORDLIST:
-            # analysis_doc[keyword.lower()] = {}
-            matcher.add("NOUN", [nlp(keyword)])
-            matches = matcher(doc)
-            analysis_doc[keyword.lower()]['count'] += len(matches)
-            if len(matches) > 0:
-                analysis_doc[keyword.lower()]['match_ratio'] += [(doc[start:end], ratio) for match_id, start, end, ratio in matches]
-            matcher.remove('NOUN')
-
-
-    for keyword in KEYWORDLIST:   
-        tmp_ar = np.array(analysis_doc[keyword.lower()]['match_ratio'])
+    for keyword in KEYWORDLIST:
+        analysis_doc[keyword.lower()] = {}
+        matcher.add("NOUN", [nlp(keyword)])
+        matches = matcher(doc)
+        # counter = 0
+        # for match_id, start, end, ratio in matches:
+        #     counter += 1
+        #     print(match_id, doc[start:end], ratio)
+        #     if counter > 10:
+        #         print('...')
+        #         break
+        analysis_doc[keyword.lower()]['count'] = len(matches)
         if analysis_doc[keyword.lower()]['count'] > 0:
-            analysis_doc[keyword.lower()]['mean'] = tmp_ar[:,1].mean()
-            analysis_doc[keyword.lower()]['median'] = np.median(tmp_ar[:,1])
+            analysis_doc[keyword.lower()]['match_ratio'] = [(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches]
+            tmp_df = pd.DataFrame(analysis_doc[keyword.lower()]['match_ratio'])
+            analysis_doc[keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean()
+            analysis_doc[keyword.lower()]['median'] = tmp_df.iloc[:,1].median()
         else:
+            # analysis_doc[keyword.lower()]['count'] = None
+            analysis_doc[keyword.lower()]['match_ratio'] = None
             analysis_doc[keyword.lower()]['mean'] = 0
             analysis_doc[keyword.lower()]['median'] = 0
+        # analysis_doc[keyword.lower()]['mean'] = tmp_ar[:,1].mean()
+        # analysis_doc[keyword.lower()]['median'] = np.median(tmp_ar[:,1])
+        matcher.remove('NOUN')
+    # from pprint import pprint
+    
         
-    # result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
-    # logger.info(f'crawl {crawl_id} analyzed in document {result}')
-    del result
-    del page_list
-
+        
+        
+    result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
+    logger.info(f'crawl {crawl_id} analyzed in document {result.inserted_id}')
 
 # ###############
 

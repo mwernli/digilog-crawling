@@ -8,12 +8,13 @@ class MongoDbConnection:
         self.mongo()
 
     def mongo(self):
-        host = 'localhost'
-        port = 27017
-        port1 = 5550
-        user = 'root'
-        password = 'mongopwd'
-        connection_string = 'mongodb://{}:{}@{}:{}'.format(user, password, host, port1)
+        # self.host = 'localhost'
+        self.host = 'digilog-mongodb'
+        self.port = 27017
+        # self.port = 5550
+        self.user = 'root'
+        self.password = 'mongopwd'
+        connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
 
         # project_wd = '/home/ubuntu/testfolder/digilog-analysis-ssh'
         # deployment_wd = '/home/ubuntu/digilog/digilog-crawling'
@@ -35,8 +36,10 @@ class PostresDbConnection:
         self.postgres()
 
     def postgres(self):
-        self.host = 'localhost'
-        self.port = '5500'
+        # self.host = 'localhost'
+        # self.port = '5500'
+        self.host = 'digilog-postgres'
+        self.port = 5432
         self.user = 'digilog'
         self.password = 'password'
         self.db = 'digilog'
