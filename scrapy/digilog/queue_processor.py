@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 class RunOptions:
     parallel_count: int
     delay_when_empty_seconds: int
-    loading_chung_size: int
+    loading_chunk_size: int
 
 
 def process_entry(entry: QueueEntry):
@@ -29,7 +29,7 @@ async def process_queue():
     while True:
         with DataSourceContext() as ds:
             options = get_run_options()
-            queue_entries = get_queue_entries(ds)
+            queue_entries = get_queue_entries(ds, options.loading_chunk_size)
             if len(queue_entries) == 0:
                 logger.info('No queue entries')
                 await asyncio.sleep(options.delay_when_empty_seconds)
@@ -39,7 +39,7 @@ async def process_queue():
 
 
 def get_run_options():
-    return RunOptions(parallel_count=3, delay_when_empty_seconds=30, loading_chung_size=6)
+    return RunOptions(parallel_count=3, delay_when_empty_seconds=30, loading_chunk_size=6)
 
 
 def get_queue_entries(ds: DataSource, max_entries: int) -> List[QueueEntry]:
