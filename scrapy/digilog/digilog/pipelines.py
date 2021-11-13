@@ -44,7 +44,7 @@ class SimplePipeline:
         logger.info("Inserted new crawl with ID: {}".format(self.crawl_id))
         head_id = spider.ds.postgres.insert_first_result_record(self.crawl_id, url)
         self.url_dict[url] = head_id
-        if spider.queue_entry is not None:
+        if hasattr(spider, 'queue_entry'):
             spider.ds.postgres.insert_queue_crawl_connection(spider.queue_entry.id, self.crawl_id)
 
     def process_item(self, item, spider):
