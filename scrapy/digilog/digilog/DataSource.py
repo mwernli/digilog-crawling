@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Dict, Callable
+from typing import List, Dict, Callable, Optional
 
 import psycopg2
 from bson import ObjectId
@@ -201,6 +201,17 @@ class MongoDbConnection:
             'raw_text': raw_text
         }
         result = self.db.simpleresults.insert_one(doc)
+        return result.inserted_id
+
+    def insert_crawl_stats(self, stats: dict, crawl_id: int, queue_id: Optional[int]) -> ObjectId:
+        doc = {
+            'crawl_id': crawl_id,
+            'stats': stats,
+        }
+        if queue_id is not None:
+            doc['queue_id'] = queue_id
+
+        result = self.db.crawlstats.insert_one(doc)
         return result.inserted_id
 
     def close(self):
