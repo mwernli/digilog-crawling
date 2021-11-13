@@ -71,6 +71,7 @@ services:
     container_name: digilog-elasticsearch
     environment:
       - "discovery.type=single-node"
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
     volumes:
       - esdata:/usr/share/elasticsearch/data
     expose:
