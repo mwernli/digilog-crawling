@@ -2,6 +2,16 @@
 Crawler &amp; Data Storage for the digilog project
 
 ## Setup
+After the first pull to the server run
+```
+cd web/
+docker build -t digilogweb3 -
+cd ..
+docker-compose up -d
+cd scrapy/
+docker build -t scrapy .
+```
+
 After every pull, run the following commands from the repository's root directory:
 ```
 docker-compose up -d

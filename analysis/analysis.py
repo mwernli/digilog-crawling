@@ -10,7 +10,8 @@ import os
 from progressbar import progressbar
 
 nlp = spacy.load('de_core_news_sm')
-nlp.max_length = 2*10**6 
+NLP_MAX_LENGTH = 2*10**6 
+nlp.max_length = NLP_MAX_LENGTH
 
 ds = DataSourceSlim()
 KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung']
@@ -41,17 +42,28 @@ end_crawl_id = ds.postgres.interact_postgres('SELECT id FROM crawl ORDER BY id D
 
 for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):    
 # for crawl_id in [1]: 
+    if nlp.max_length != NLP_MAX_LENGTH:
+        nlp.max_length =  NLP_MAX_LENGTH
+        logger.info(f'resetting nlp max_length from {nlp.max_length}to {NLP_MAX_LENGTH}')
+
     result = ds.mongo.db.simpleresults.find({'crawl_id': crawl_id})
     obj = [item for item in result]
     pages_n = len(obj)
     analysis_doc = {}
     analysis_doc['links_n'] = pages_n
     analysis_doc['crawl_id'] = crawl_id
-    doc = nlp(' '.join([token.text
+    full_text = ' '.join([token.text
                     for page in obj
                     if len(page['raw_text']) < 5*10**4
                     for token in nlp(page['raw_text'])
-                    if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X']))
+                    if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
+    if len(full_text) > nlp.max_length:
+        logger.info(f'length {len(full_text)} of document exceeds nlp.max_length ({nlp.max_length}) -> setting new max_length')
+        print(f'length {len(full_text)} of document exceeds nlp.max_length ({nlp.max_length}) -> setting new max_length')
+        nlp.max_length = len(full_text) + 10**4
+        doc = nlp(full_text)
+    else:
+        doc = nlp(full_text)
     matcher = FuzzyMatcher(nlp.vocab)
         
     for keyword in KEYWORDLIST:
