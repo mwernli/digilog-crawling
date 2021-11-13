@@ -63,7 +63,8 @@ class SimplePipeline:
     def close_spider(self, spider):
         queue_id = spider.queue_entry.id if hasattr(spider, 'queue_entry') else None
         nested_stats = stats_to_nested_dict(spider.crawler.stats.get_stats())
-        spider.ds.mongodb.insert_crawl_stats(nested_stats, self.crawl_id, queue_id)
+        stats_id = spider.ds.mongodb.insert_crawl_stats(nested_stats, self.crawl_id, queue_id)
+        spider.ds.postgres.insert_crawl_stats_connection(self.crawl_id, str(stats_id))
 
 
 def stats_to_nested_dict(scrapy_stats: dict) -> dict:

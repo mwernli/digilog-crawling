@@ -175,6 +175,17 @@ class PostgresConnection:
                     (status.value, reason, id)
                 )
 
+    def insert_crawl_stats_connection(self, crawl_id: int, stats_id: str):
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO crawl_stats (crawl_id, mongo_stats_id)
+                    VALUES (%s, %s)
+                    """,
+                    (crawl_id, stats_id)
+                )
+
     def close(self):
         self.connection.close()
 
