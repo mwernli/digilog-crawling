@@ -97,6 +97,23 @@ services:
     depends_on:
       - fluentd
 
+  queueprocessor:
+    build: ./scrapy/.
+    image: scrapy
+    container_name: digilog-crawl-queue-processor
+    entrypoint: ["python"]
+    command: ["/src/queue_processor.py"]
+    restart: always
+    volumes:
+    - ./scrapy/digilog:/src
+    depends_on:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "localhost:24224"
+        tag: "crawl-queue-processor"
+
 
 volumes:
   esdata:
