@@ -2,6 +2,7 @@ docker \
   run \
   --rm \
   -d \
+  --name digilog-crawl-queue-processor \
   -v "$PWD/digilog":/src \
   --network digilog-data-network \
   --log-driver fluentd \
