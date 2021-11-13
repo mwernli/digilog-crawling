@@ -89,14 +89,14 @@ services:
     depends_on:
       - elasticsearch
 
-  web:
-    image: digilogweb3
-    container_name: digilog-web
-    restart: always
-    ports:
-      - 80:80
-    depends_on:
-      - fluentd
+#  web:
+#    image: digilogweb3
+#    container_name: digilog-web
+#    restart: always
+#    ports:
+#      - 80:80
+#    depends_on:
+#      - fluentd
 
   queueprocessor:
     build: ./scrapy/.

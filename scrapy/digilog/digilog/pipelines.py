@@ -4,15 +4,12 @@
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
 
-# useful for handling different item types with a single interface
+import logging
+import re
 from typing import List
 
-from itemadapter import ItemAdapter
-
-import re
 from urllib3.util import parse_url
 from w3lib.url import canonicalize_url
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +50,8 @@ class SimplePipeline:
         if url in self.url_dict:
             parent_id = self.url_dict[url]
         else:
-            logger.warning("WARNING: Parent URL not found: {} in {}".format(url, self.url_dict))
+            logger.warning("Parent URL not found for: {}".format(url))
+            logger.debug("URL-Dict was: {}".format(self.url_dict))
             parent_id = None
         mongo_id = spider.ds.mongodb.insert_crawl_result(self.crawl_id, parent_id, item['html'], item['raw_text'])
         spider.ds.postgres.update_mongo_id(parent_id, str(mongo_id))
