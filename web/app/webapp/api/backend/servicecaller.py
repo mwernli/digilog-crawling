@@ -70,8 +70,7 @@ class MongoDbConnection:
         self.db = self.client.digilog
 
     def __enter__(self):
-        self.session.start_transaction()
-        return self.session
+        return self.session.start_transaction()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
@@ -93,8 +92,8 @@ class DataConnectionProvider:
 
 def call(handler):
     with DataConnectionProvider() as dc:
-        with dc.postgres as postgres_connection, dc.mongodb as mongodb_session:
-            ds = DataSource(postgres_connection, mongodb_session)
+        with dc.postgres as postgres_connection, dc.mongodb:
+            ds = DataSource(postgres_connection, dc.mongodb.session)
             return handler(ds)
 
 
