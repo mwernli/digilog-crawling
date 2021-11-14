@@ -1,11 +1,8 @@
 # from importlib.machinery import SourceFileLoader
 # module, path = 'DataSource', '/home/ubuntu/digilog/digilog-crawling/scrapy/digilog/digilog/DataSource.py'
 # DataSource = SourceFileLoader(module,path).load_module()
-import psycopg2
-from psycopg2.extras import execute_values
-from webApp.external_scripts import DataSource
 import pandas as pd
-
+import psycopg2
 
 # host = 'digilog-postgres'
 # host = '172.19.0.3'

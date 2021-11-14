@@ -1,12 +1,12 @@
 
 from flask import Flask, request, current_app
-from flask_bootstrap import Bootstrap
 from flask_babel import Babel
-from .nav.nav import nav
-from .nav import bp as nav_bp
-from .main import bp as main_bp
-from .api import bp as api_bp
+from flask_bootstrap import Bootstrap
 
+from .api import bp as api_bp
+from .main import bp as main_bp
+from .nav import bp as nav_bp
+from .nav.nav import nav
 
 bootstrap = Bootstrap()
 babel = Babel()

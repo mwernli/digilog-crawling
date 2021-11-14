@@ -1,5 +1,5 @@
-from flask_nav import Nav
 from flask_bootstrap import __version__ as FLASK_BOOTSTRAP_VERSION
+from flask_nav import Nav
 from flask_nav.elements import Navbar, View, Subgroup, Link, Text, Separator
 
 nav = Nav()

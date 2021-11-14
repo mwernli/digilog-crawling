@@ -1,4 +1,5 @@
 import os
+
 import psycopg2
 from pymongo import MongoClient
 
@@ -54,7 +55,7 @@ class PostgresConnection:
 
 
 class MongoDbConnection:
-    def __init__(self, called_from_container:bool = True):
+    def __init__(self, called_from_container: bool = True):
         if called_from_container:
             self.host = 'digilog-mongodb'
             self.port = 27017

@@ -1,5 +1,5 @@
 from dataclasses import asdict
-from typing import List, Iterator
+from typing import Iterator
 
 from .model import CrawlOverview
 from ..application.service import load_all_crawls
