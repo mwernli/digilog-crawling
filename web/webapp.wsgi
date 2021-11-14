@@ -1,10 +1,10 @@
 #!/usr/bin/python3
-import sys
 import os
-import logging
-os.environ['OUTSIDE_NETWORK'] = '0'
-logging.basicConfig(stream=sys.stderr)
-sys.path.insert(0, "/var/www/webApp/")
+import sys
 
-from webApp import app as application
+from web.webApp import create_app
+
+os.environ['OUTSIDE_NETWORK'] = '0'
+sys.path.insert(0, "/var/www/webApp/")
+application = create_app()
 application.secret_key = 'digilog'
