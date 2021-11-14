@@ -1,35 +1,21 @@
-FROM ubuntu
+FROM python:3.8-slim
 
-MAINTAINER gerj@zhaw.ch
+RUN useradd digilog
 
-ARG DEBIAN_FRONTEND=noninteractive
+WORKDIR /home/digilog
 
-RUN apt-get update
-RUN apt-get install -y -qq apache2
-RUN apt-get install -y -qq apache2-utils
-RUN apt-get install -y libapache2-mod-wsgi-py3
-RUN apt-get install -y python-dev
-RUN apt-get clean
-
-RUN apt-get install -y python3.7
-RUN apt-get install -y python3-pip
+ENV FLASK_APP digilog.py
 
 COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+RUN python -m venv venv && \
+    venv/bin/pip install --upgrade pip && \
+    venv/bin/pip install -r requirements.txt && \
+    venv/bin/pip install gunicorn
 
-RUN mkdir /var/www/webApp
+COPY ./app/boot.sh ./app/wsgi.py ./
+RUN chmod +x ./boot.sh
 
-COPY webApp.conf /etc/apache2/sites-available/webApp.conf
-RUN a2ensite webApp
+USER digilog
 
-COPY webapp.wsgi /var/www/webApp/webapp.wsgi
-COPY webApp /var/www/webApp/webApp
-
-RUN a2dissite 000-default.conf
-RUN a2ensite webApp.conf
-
-EXPOSE 80
-
-WORKDIR /var/www/webApp
-
-CMD ["apache2ctl", "-D", "FOREGROUND"]
+EXPOSE 5000
+ENTRYPOINT ["./boot.sh"]

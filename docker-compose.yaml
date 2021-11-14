@@ -95,7 +95,9 @@ services:
     container_name: digilog-web
     restart: always
     ports:
-      - 80:80
+      - 80:5000
+    volumes:
+      - ./web/app/webapp:/home/digilog/webapp
     depends_on:
       - fluentd
     logging:

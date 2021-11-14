@@ -7,7 +7,10 @@ from .core.common.model import DataSource
 
 class DataConnection:
     def __init__(self):
-        container_network = not bool(int(os.environ['OUTSIDE_NETWORK']))
+        try:
+            container_network = not bool(int(os.environ['OUTSIDE_NETWORK']))
+        except KeyError:
+            container_network = True
         self.postgres = PostgresConnection(container_network)
         self.mongodb = MongoDbConnection(container_network)
 
