@@ -57,45 +57,75 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
     analysis_doc['links_n'] = pages_n
     analysis_doc['crawl_id'] = crawl_id
     analysis_doc['keywords'] = {}
-    full_text = ' '.join([token.text
-                    for page in obj
-                    if len(page['raw_text']) < 5*10**4
-                    for token in nlp(page['raw_text'])
-                    if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
-    if len(full_text) > nlp.max_length:
-        logger.info(f'length {len(full_text)} of document exceeds nlp.max_length ({nlp.max_length}) -> setting new max_length')
-        print(f'length {len(full_text)} of document exceeds nlp.max_length ({nlp.max_length}) -> setting new max_length')
-        nlp.max_length = len(full_text) + 10**4
-        doc = nlp(full_text)
-    else:
-        doc = nlp(full_text)
-    matcher = FuzzyMatcher(nlp.vocab)
-        
+    # full_text = ' '.join([token.text
+    #                 for page in obj
+    #                 if len(page['raw_text']) < 5*10**4
+    #                 for token in nlp(page['raw_text'])
+    #                 if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
+    
     for keyword in KEYWORDLIST:
-        analysis_doc['keywords'][keyword.lower()] = {}
-        matcher.add("NOUN", [nlp(keyword)])
-        matches = matcher(doc)
-        # counter = 0
-        # for match_id, start, end, ratio in matches:
-        #     counter += 1
-        #     print(match_id, doc[start:end], ratio)
-        #     if counter > 10:
-        #         print('...')
-        #         break
-        analysis_doc['keywords'][keyword.lower()]['count'] = len(matches)
-        if analysis_doc['keywords'][keyword.lower()]['count'] > 0:
-            analysis_doc['keywords'][keyword.lower()]['match_ratio'] = [(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches]
-            tmp_df = pd.DataFrame(analysis_doc[keyword.lower()]['match_ratio'])
-            analysis_doc['keywords'][keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean().round(5)
-            analysis_doc['keywords'][keyword.lower()]['median'] = tmp_df.iloc[:,1].median().round(5)
-            analysis_doc['keywords'][keyword.lower()]['var'] = tmp_df.iloc[:,1].var().round(5)
-        else:
-            # analysis_doc[keyword.lower()]['count'] = None
-            analysis_doc['keywords'][keyword.lower()]['match_ratio'] = None
-            analysis_doc['keywords'][keyword.lower()]['mean'] = 0
-            analysis_doc['keywords'][keyword.lower()]['median'] = 0
-            analysis_doc['keywords'][keyword.lower()]['var'] = 0
-        matcher.remove('NOUN')
+            analysis_doc['keywords'][keyword.lower()] =  {}
+            analysis_doc['keywords'][keyword.lower()]['count'] = 0
+            analysis_doc['keywords'][keyword.lower()]['match_ratio'] = []
+            analysis_doc['keywords'][keyword.lower()]['result_id'] = []
+
+    for page in obj:
+        page_text = ' '.join([token for token in nlp(page['raw_text']) if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
+        doc = nlp(page_text)
+        matcher = FuzzyMatcher(nlp.vocab)
+
+        for keyword in KEYWORDLIST:
+            analysis_doc['keywords'][keyword.lower()] = {}
+            matcher.add("NOUN", [nlp(keyword)])
+            matches = matcher(doc)
+            analysis_doc['keywords'][keyword.lower()]['count'] += len(matches)
+            if analysis_doc['keywords'][keyword.lower()]['count'] > 0:
+                analysis_doc['keywords'][keyword.lower()]['match_ratio'].extend([(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches])
+                analysis_doc['keywords'][keyword.lower()]['result_id'].append(page['result_id'])
+            else:
+                pass
+            matcher.remove('NOUN')
+
+    for keyword in KEYWORDLIST:
+        tmp_df = pd.DataFrame(analysis_doc['keywords'][keyword.lower()]['match_ratio'])
+        analysis_doc['keywords'][keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean().round(5)
+        analysis_doc['keywords'][keyword.lower()]['median'] = tmp_df.iloc[:,1].median().round(5)
+        analysis_doc['keywords'][keyword.lower()]['var'] = tmp_df.iloc[:,1].var().round(5)
+
+    # if len(full_text) > nlp.max_length:
+    #     logger.info(f'length {len(full_text)} of document exceeds nlp.max_length ({nlp.max_length}) -> setting new max_length')
+    #     # print(f'length {len(full_text)} of document exceeds nlp.max_length ({nlp.max_length}) -> setting new max_length')
+    #     nlp.max_length = len(full_text) + 10**4
+    #     doc = nlp(full_text)
+    # else:
+    #     doc = nlp(full_text)
+    # matcher = FuzzyMatcher(nlp.vocab)
+        
+    # for keyword in KEYWORDLIST:
+    #     analysis_doc['keywords'][keyword.lower()] = {}
+    #     matcher.add("NOUN", [nlp(keyword)])
+    #     matches = matcher(doc)
+    #     # counter = 0
+    #     # for match_id, start, end, ratio in matches:
+    #     #     counter += 1
+    #     #     print(match_id, doc[start:end], ratio)
+    #     #     if counter > 10:
+    #     #         print('...')
+    #     #         break
+    #     analysis_doc['keywords'][keyword.lower()]['count'] = len(matches)
+    #     if analysis_doc['keywords'][keyword.lower()]['count'] > 0:
+    #         analysis_doc['keywords'][keyword.lower()]['match_ratio'] = [(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches]
+    #         tmp_df = pd.DataFrame(analysis_doc['keywords'][keyword.lower()]['match_ratio'])
+    #         analysis_doc['keywords'][keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean().round(5)
+    #         analysis_doc['keywords'][keyword.lower()]['median'] = tmp_df.iloc[:,1].median().round(5)
+    #         analysis_doc['keywords'][keyword.lower()]['var'] = tmp_df.iloc[:,1].var().round(5)
+    #     else:
+    #         # analysis_doc[keyword.lower()]['count'] = None
+    #         analysis_doc['keywords'][keyword.lower()]['match_ratio'] = None
+    #         analysis_doc['keywords'][keyword.lower()]['mean'] = 0
+    #         analysis_doc['keywords'][keyword.lower()]['median'] = 0
+    #         analysis_doc['keywords'][keyword.lower()]['var'] = 0
+    #     matcher.remove('NOUN')
     # from pprint import pprint
     
         
