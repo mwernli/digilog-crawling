@@ -79,7 +79,7 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             matcher.add("NOUN", [nlp(keyword)])
             matches = matcher(doc)
             analysis_doc['keywords'][keyword.lower()]['count'] += len(matches)
-            if analysis_doc['keywords'][keyword.lower()]['count'] > 0:
+            if analysis_doc['keywords'][keyword.lower()]['count'] > len(matches):
                 analysis_doc['keywords'][keyword.lower()]['match_ratio'].extend([(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches])
                 analysis_doc['keywords'][keyword.lower()]['result_id'].append(page['result_id'])
             else:
