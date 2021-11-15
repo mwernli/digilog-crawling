@@ -82,7 +82,7 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
         #     if counter > 10:
         #         print('...')
         #         break
-        analysis_doc[keyword.lower()]['count'] = len(matches)
+        analysis_doc['keywords'][keyword.lower()]['count'] = len(matches)
         if analysis_doc['keywords'][keyword.lower()]['count'] > 0:
             analysis_doc['keywords'][keyword.lower()]['match_ratio'] = [(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches]
             tmp_df = pd.DataFrame(analysis_doc[keyword.lower()]['match_ratio'])
