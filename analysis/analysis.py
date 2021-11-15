@@ -69,10 +69,11 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             analysis_doc['keywords'][keyword.lower()]['result_id'] = []
 
     for page in obj:
-        if len(page_text) > 2*10**6:
-            for token in nlp(page['raw_text'][:200]):
-                print(f'(token: {token.text}, tag: {token.pos_})')
-                
+        if len(page['raw_text']) > 2*10**6:
+            # for token in nlp(page['raw_text'][:200]):
+            #     print(f'(token: {token.text}, tag: {token.pos_})')
+            continue
+
         page_text = ' '.join([token.text for token in nlp(page['raw_text']) if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
 
 
