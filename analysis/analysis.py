@@ -49,12 +49,11 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
     postgres_result = re.split(',',postgres_result[0][0].replace('(','').replace(')',''))
     result = ds.mongo.db.simpleresults.find({'crawl_id': crawl_id})
     obj = [item for item in result]
-    pages_n = len(obj)
     analysis_doc = {}
     analysis_doc['loc_gov_id'] = int(postgres_result[0])
     analysis_doc['name'] = postgres_result[1]
     analysis_doc['url'] = postgres_result[2]
-    analysis_doc['links_n'] = pages_n
+    analysis_doc['links_n'] = len(obj)
     analysis_doc['crawl_id'] = crawl_id
     analysis_doc['keywords'] = {}
     # full_text = ' '.join([token.text
@@ -70,7 +69,13 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             analysis_doc['keywords'][keyword.lower()]['result_id'] = []
 
     for page in obj:
+        if len(page_text) > 2*10**6:
+            for token in nlp(page['raw_text'][:200]):
+                print(f'(token: {token.text}, tag: {token.pos_})')
+                
         page_text = ' '.join([token.text for token in nlp(page['raw_text']) if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
+
+
         doc = nlp(page_text)
         matcher = FuzzyMatcher(nlp.vocab)
 
