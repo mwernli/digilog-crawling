@@ -13,7 +13,6 @@ class SimpleSpider(scrapy.Spider):
     def __init__(self, url=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ds = DataSource()
-        self.queue_entry = None
         self.domain = '.'.join(parse_url(url).host.split('.')[-2:])
         self.logger.info('Initialized crawler "{}" on domain "{}"'.format(self.name, self.domain))
         self.link_extractor = LxmlLinkExtractor(allow_domains=[self.domain])

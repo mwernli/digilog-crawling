@@ -8,7 +8,8 @@ from multiprocessing import Pool
 from digilog.DataSource import DataSourceContext, DataSource, QueueEntry
 
 FORMAT = '%(asctime)s [QueueProcessor] %(levelname)s: %(message)s'
-logging.basicConfig(format=FORMAT)
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+logging.basicConfig(format=FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -17,6 +18,7 @@ logger.setLevel(logging.INFO)
 class RunOptions:
     parallel_count: int
     delay_when_empty_seconds: int
+    loading_chunk_size: int
 
 
 def process_entry(entry: QueueEntry):
@@ -27,23 +29,21 @@ async def process_queue():
     while True:
         with DataSourceContext() as ds:
             options = get_run_options()
-            queue_entries = get_queue_entries(ds)
+            queue_entries = get_queue_entries(ds, options.loading_chunk_size)
             if len(queue_entries) == 0:
-                logger.info('No queue entries')  # TODO better format for log output
+                logger.info('No queue entries')
                 await asyncio.sleep(options.delay_when_empty_seconds)
             else:
                 with Pool(options.parallel_count) as p:
                     p.map(process_entry, queue_entries)
 
 
-# TODO add run options table in database and load from there
 def get_run_options():
-    return RunOptions(3, 30)
+    return RunOptions(parallel_count=3, delay_when_empty_seconds=30, loading_chunk_size=6)
 
 
-# TODO logging?
-def get_queue_entries(ds: DataSource) -> List[QueueEntry]:
-    return ds.postgres.load_new_queue_entries()
+def get_queue_entries(ds: DataSource, max_entries: int) -> List[QueueEntry]:
+    return ds.postgres.load_new_queue_entries(max_entries)
 
 
 if __name__ == '__main__':

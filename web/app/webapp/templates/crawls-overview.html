@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <table id="data" class="table table-striped">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>{{_('Inserted at')}}</th>
+        <th>{{_('Starting URL')}}</th>
+        <th>{{_('Details')}}</th>
+      </tr>
+    </thead>
+  </table>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+{% set detail_name %}
+{{_('Details')}}
+{% endset %}
+  <script>
+    $(document).ready(function () {
+      $('#data').DataTable({
+        ajax: '/api/data_crawl',
+        columns: [
+          {data: 'id', orderable : true},
+          {data: 'inserted_at', orderable: true},
+          {data: 'top_url', searchable: true, orderable: false},
+          {data: 'id', title: 'Details', searchable: false, orderable: false, render: (data) => {
+            return `<a href="crawl/detail/${data}">{{detail_name}}</a>`
+            }},
+        ],
+      });
+
+    });
+  </script>
+{% endblock %}
