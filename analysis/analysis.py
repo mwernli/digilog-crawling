@@ -93,10 +93,15 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             matcher.remove('NOUN')
 
     for keyword in KEYWORDLIST:
-        tmp_df = pd.DataFrame(analysis_doc['keywords'][keyword.lower()]['match_ratio'])
-        analysis_doc['keywords'][keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean().round(5)
-        analysis_doc['keywords'][keyword.lower()]['median'] = tmp_df.iloc[:,1].median().round(5)
-        analysis_doc['keywords'][keyword.lower()]['var'] = tmp_df.iloc[:,1].var().round(5)
+        if analysis_doc['keywords'][keyword.lower()]['count'] > 0
+            tmp_df = pd.DataFrame(analysis_doc['keywords'][keyword.lower()]['match_ratio'])
+            analysis_doc['keywords'][keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean().round(5)
+            analysis_doc['keywords'][keyword.lower()]['median'] = tmp_df.iloc[:,1].median().round(5)
+            analysis_doc['keywords'][keyword.lower()]['var'] = tmp_df.iloc[:,1].var().round(5)
+        else:
+            analysis_doc['keywords'][keyword.lower()]['mean'] = 0
+            analysis_doc['keywords'][keyword.lower()]['median'] = 0
+            analysis_doc['keywords'][keyword.lower()]['var'] = 0
 
     # if len(full_text) > nlp.max_length:
     #     logger.info(f'length {len(full_text)} of document exceeds nlp.max_length ({nlp.max_length}) -> setting new max_length')
