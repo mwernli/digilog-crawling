@@ -45,13 +45,18 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
     if nlp.max_length != NLP_MAX_LENGTH:
         nlp.max_length =  NLP_MAX_LENGTH
         logger.info(f'resetting nlp max_length from {nlp.max_length}to {NLP_MAX_LENGTH}')
-
+    postgres_result = ds.postgres.interact_postgres(f'SELECT (loc_gov_ch.id, loc_gov_ch.url, loc_gov_ch.gdename) FROM loc_gov_ch LEFT JOIN crawl ON loc_gov_ch.url = crawl.top_url WHERE crawl.id = {crawl_id}' )
+    postgres_result = re.split(',',postgres_result[0][0].replace('(','').replace(')',''))
     result = ds.mongo.db.simpleresults.find({'crawl_id': crawl_id})
     obj = [item for item in result]
     pages_n = len(obj)
     analysis_doc = {}
+    analysis_doc['loc_gov_id'] = int(postgres_result[0])
+    analysis_doc['name'] = postgres_result[1]
+    analysis_doc['url'] = postgres_result[2]
     analysis_doc['links_n'] = pages_n
     analysis_doc['crawl_id'] = crawl_id
+    analysis_doc['keywords'] = {}
     full_text = ' '.join([token.text
                     for page in obj
                     if len(page['raw_text']) < 5*10**4
@@ -78,18 +83,18 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
         #         print('...')
         #         break
         analysis_doc[keyword.lower()]['count'] = len(matches)
-        if analysis_doc[keyword.lower()]['count'] > 0:
-            analysis_doc[keyword.lower()]['match_ratio'] = [(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches]
+        if analysis_doc['keywords'][keyword.lower()]['count'] > 0:
+            analysis_doc['keywords'][keyword.lower()]['match_ratio'] = [(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches]
             tmp_df = pd.DataFrame(analysis_doc[keyword.lower()]['match_ratio'])
-            analysis_doc[keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean()
-            analysis_doc[keyword.lower()]['median'] = tmp_df.iloc[:,1].median()
+            analysis_doc['keywords'][keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean().round(5)
+            analysis_doc['keywords'][keyword.lower()]['median'] = tmp_df.iloc[:,1].median().round(5)
+            analysis_doc['keywords'][keyword.lower()]['var'] = tmp_df.iloc[:,1].var().round(5)
         else:
             # analysis_doc[keyword.lower()]['count'] = None
-            analysis_doc[keyword.lower()]['match_ratio'] = None
-            analysis_doc[keyword.lower()]['mean'] = 0
-            analysis_doc[keyword.lower()]['median'] = 0
-        # analysis_doc[keyword.lower()]['mean'] = tmp_ar[:,1].mean()
-        # analysis_doc[keyword.lower()]['median'] = np.median(tmp_ar[:,1])
+            analysis_doc['keywords'][keyword.lower()]['match_ratio'] = None
+            analysis_doc['keywords'][keyword.lower()]['mean'] = 0
+            analysis_doc['keywords'][keyword.lower()]['median'] = 0
+            analysis_doc['keywords'][keyword.lower()]['var'] = 0
         matcher.remove('NOUN')
     # from pprint import pprint
     
@@ -98,41 +103,3 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
         
     result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
     logger.info(f'crawl {crawl_id} analyzed in document {result.inserted_id}')
-
-# ###############
-
-# # nlp = spacy.blank("de")
-# text = """Grint Anderson created spaczz in his home at 555 Fake St,
-# Apt 5 in Nashv1le, TN 55555-1234 in the US."""  # Spelling errors intentional.
-# doc = nlp(text)
-
-
-
-
-
-
-
-
-
-
-
-
-# matcher.add("NOUN", [nlp("Steuererklärung")])
-# matches = matcher(doc)
-# print(f'Steuererklärung: {len(matches)}')
-
-
-
-
-
-#
-
-# import spacy
-# from spaczz.pipeline import SpaczzRuler
-# nlp = spacy.blank("en")
-# ruler = SpaczzRuler(nlp)
-# doc = nlp.make_doc("My name is Anderson, Grunt")
-# ruler.add_patterns([{"label": "NAME", "pattern": "Grant Andersen",
-#                          "type": "fuzzy", "kwargs": {"fuzzy_func": "token_sort"}}])
-# doc = ruler(doc)
-# "Anderson, Grunt" in [ent.text for ent in doc.ents]
