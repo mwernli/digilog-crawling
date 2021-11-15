@@ -72,7 +72,7 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
     matcher = FuzzyMatcher(nlp.vocab)
         
     for keyword in KEYWORDLIST:
-        analysis_doc[keyword.lower()] = {}
+        analysis_doc['keywords'][keyword.lower()] = {}
         matcher.add("NOUN", [nlp(keyword)])
         matches = matcher(doc)
         # counter = 0
