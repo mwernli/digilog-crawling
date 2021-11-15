@@ -70,16 +70,16 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             analysis_doc['keywords'][keyword.lower()]['result_id'] = []
 
     for page in obj:
-        page_text = ' '.join([token for token in nlp(page['raw_text']) if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
+        page_text = ' '.join([token.text for token in nlp(page['raw_text']) if not token.is_stop and not token.is_punct and not token.pos_ == 'SPACE' and not token.pos_ == 'ADP' and not token.pos_ == 'ADJ' and not token.pos_== 'DET' and not token.pos == 'X'])
         doc = nlp(page_text)
         matcher = FuzzyMatcher(nlp.vocab)
 
         for keyword in KEYWORDLIST:
-            analysis_doc['keywords'][keyword.lower()] = {}
             matcher.add("NOUN", [nlp(keyword)])
             matches = matcher(doc)
-            analysis_doc['keywords'][keyword.lower()]['count'] += len(matches)
-            if analysis_doc['keywords'][keyword.lower()]['count'] > len(matches):
+            
+            if len(matches) > 0:
+                analysis_doc['keywords'][keyword.lower()]['count'] += len(matches)
                 analysis_doc['keywords'][keyword.lower()]['match_ratio'].extend([(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches])
                 analysis_doc['keywords'][keyword.lower()]['result_id'].append(page['result_id'])
             else:
