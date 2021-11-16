@@ -29,16 +29,23 @@ file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logger.addHandler(file_handler)
 
-if 'simpleanalysis' in ds.mongo.db.list_collection_names():
-    cursor = ds.mongo.db.simpleanalysis.find().sort([('_id', -1)]).limit(1)
-    start_crawl_id = [item for item in cursor][0]['crawl_id']
-else:
+
+# if 'simpleanalysis' in ds.mongo.db.list_collection_names():
+#     cursor = ds.mongo.db.simpleanalysis.find().sort([('_id', -1)]).limit(1)
+#     start_crawl_id = [item for item in cursor][0]['crawl_id']
+# else:
+#     start_crawl_id = 1
+postgres_result = ds.postgres.interact_postgres('SELECT crawl_id FROM crawl_analysis ORDER BY crawl_id DESC LIMIT 1;')
+if len(postgres_result) == 0:
     start_crawl_id = 1
+else:
+    start_crawl_id = int(postgres_result[0][0])
+
 
 end_crawl_id = ds.postgres.interact_postgres('SELECT id FROM crawl ORDER BY id DESC LIMIT 1;')[0][0]
 
-# print(start_crawl_id)
-# print(end_crawl_id)
+logger.info(f'analyzing crawls from id{start_crawl_id} to {end_crawl_id}')
+print(f'analyzing crawls from id{start_crawl_id} to {end_crawl_id}')
 
 for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):    
 # for crawl_id in [1]: 
@@ -102,7 +109,6 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
         
     result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
     cursor = ds.postgres.connection.cursor()
-    cursor.execute('INSERT INTO crawl_analysis (crawl_id, mongo_analysis_id) VALUES (%s, %s)', (crawl_id, result.inserted_id))
-    pg_result = cursor.fetchall()
-    
+    cursor.execute('INSERT INTO crawl_analysis (crawl_id, mongo_analysis_id) VALUES (%s, %s)', (crawl_id, str(result.inserted_id)))
+
     logger.info(f'crawl {crawl_id} analyzed in document {result.inserted_id}')
