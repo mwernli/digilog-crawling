@@ -69,6 +69,7 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             analysis_doc['keywords'][keyword.lower()]['result_id'] = []
 
     for page in obj:
+        page_result_id = page['result_id']
         if len(page['raw_text']) > 2*10**6:
             # for token in nlp(page['raw_text'][:200]):
             #     print(f'(token: {token.text}, tag: {token.pos_})')
@@ -91,9 +92,10 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             else:
                 pass
             matcher.remove('NOUN')
+        del page_result_id
 
     for keyword in KEYWORDLIST:
-        if analysis_doc['keywords'][keyword.lower()]['count'] > 0
+        if analysis_doc['keywords'][keyword.lower()]['count'] > 0:
             tmp_df = pd.DataFrame(analysis_doc['keywords'][keyword.lower()]['match_ratio'])
             analysis_doc['keywords'][keyword.lower()]['mean'] = tmp_df.iloc[:,1].mean().round(5)
             analysis_doc['keywords'][keyword.lower()]['median'] = tmp_df.iloc[:,1].median().round(5)
@@ -143,4 +145,5 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
         
         
     result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
+    ds.postgres.db.interact_postgres('INSERT INTO crawl_analysis (crawl_id, mongo_analysis_id) VALUES (%s %s)', (crawl_id, result.inserted_id))
     logger.info(f'crawl {crawl_id} analyzed in document {result.inserted_id}')
