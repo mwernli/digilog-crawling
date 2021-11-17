@@ -14,8 +14,9 @@ NLP_MAX_LENGTH = 2*10**6
 nlp.max_length = NLP_MAX_LENGTH
 
 ds = DataSourceSlim()
-KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung']
-
+if not keywords in ds.mongo.list_collection_names():
+    KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung']
+else 
 
 # Logger
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -45,7 +46,7 @@ else:
 end_crawl_id = ds.postgres.interact_postgres('SELECT id FROM crawl ORDER BY id DESC LIMIT 1;')[0][0]
 
 logger.info(f'analyzing crawls from id{start_crawl_id} to {end_crawl_id}')
-print(f'analyzing crawls from id{start_crawl_id} to {end_crawl_id}')
+print(f'analyzing crawls from crawl_id {start_crawl_id} to {end_crawl_id}')
 
 for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):    
 # for crawl_id in [1]: 
@@ -86,7 +87,8 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
             
             if len(matches) > 0:
                 analysis_doc['keywords'][keyword.lower()]['count'] += len(matches)
-                analysis_doc['keywords'][keyword.lower()]['match_ratio'].extend([(str(doc[start:end]), float(ratio)) for match_id, start, end, ratio in matches])
+                # saves word, match_ratio and result_id of document it appears on
+                analysis_doc['keywords'][keyword.lower()]['match_ratio'].extend([(str(doc[start:end]), float(ratio), page['result_id']) for match_id, start, end, ratio in matches])
                 analysis_doc['keywords'][keyword.lower()]['result_id'].append(page['result_id'])
             else:
                 pass
