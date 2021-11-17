@@ -118,6 +118,8 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
         
     result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
     cursor = ds.postgres.connection.cursor()
-    cursor.execute('INSERT INTO crawl_analysis (crawl_id, mongo_analysis_id) VALUES (%s, %s)', (crawl_id, str(result.inserted_id)))
-
+    cursor.execute('INSERT INTO crawl_analysis (crawl_id, mongo_analysis_id) VALUES (%s, %s) RETURNING id;', (crawl_id, str(result.inserted_id)))
+    analysis_id = cursor.fetchone()[0]
+    ds.postgres.connection.commit()
+    cursor.close()
     logger.info(f'crawl {crawl_id} analyzed in document {result.inserted_id}')
