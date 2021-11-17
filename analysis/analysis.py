@@ -14,13 +14,13 @@ NLP_MAX_LENGTH = 2*10**6
 nlp.max_length = NLP_MAX_LENGTH
 
 ds = DataSourceSlim()
-if not keywords in ds.mongo.list_collection_names():
+if not 'keywords' in ds.mongo.list_collection_names():
     KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung']
     doc = {
         'keywordlist' : KEYWORDLIST
     }
     ds.mongo.db.keywords.insert_one(doc)
-else :
+else:
     mongo_keywords = ds.mongo.db.keywords.find({})
     KEYWORDLIST = [item for item in mongo_keywords][0]['keywordlist']
 
