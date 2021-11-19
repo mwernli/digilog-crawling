@@ -38,8 +38,8 @@ def determine_crawl_status(crawl_detail: CrawlDetail) -> CrawlStatus:
 
 
 def determine_crawl_duration_seconds(crawl_detail: CrawlDetail) -> float:
-    if crawl_detail.queue_entry is not None:
-        return (crawl_detail.queue_entry.updated_at - crawl_detail.queue_entry.inserted_at).seconds
+    if crawl_detail.queue_entry is not None and crawl_detail.queue_entry.status != 'IN_PROGRESS':
+        return (crawl_detail.queue_entry.updated_at - crawl_detail.queue_entry.inserted_at).total_seconds()
     else:
         return crawl_detail.time_delta
 
