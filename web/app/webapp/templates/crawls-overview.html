@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-  <table id="data" class="table table-striped">
+<table id="data" class="table table-striped">
     <thead>
-      <tr>
+    <tr>
         <th>ID</th>
         <th>{{_('Inserted at')}}</th>
         <th>{{_('Starting URL')}}</th>
         <th>{{_('Details')}}</th>
-      </tr>
+    </tr>
     </thead>
-  </table>
+</table>
 {% endblock %}
 
 {% block scripts %}
@@ -18,20 +18,22 @@
 {% set detail_name %}
 {{_('Details')}}
 {% endset %}
-  <script>
+<script>
     $(document).ready(function () {
-      $('#data').DataTable({
-        ajax: '/api/data_crawl',
-        columns: [
-          {data: 'id', orderable : true},
-          {data: 'inserted_at', orderable: true},
-          {data: 'top_url', searchable: true, orderable: false},
-          {data: 'id', title: 'Details', searchable: false, orderable: false, render: (data) => {
-            return `<a href="crawl/detail/${data}">{{detail_name}}</a>`
-            }},
-        ],
-      });
+        const crawls = {{ crawls | tojson }}
+        $('#data').DataTable({
+            data: crawls,
+            columns: [
+                {data: 'id', orderable: true},
+                {data: 'inserted_at', orderable: true},
+                {data: 'top_url', searchable: true, orderable: false},
+                {data: 'details_url', title: 'Details', searchable: false, orderable: false, render: (url) => {
+                        return `<a href="${url}">{{detail_name}}</a>`
+                    }
+                },
+            ],
+        });
 
     });
-  </script>
+</script>
 {% endblock %}

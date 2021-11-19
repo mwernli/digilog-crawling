@@ -1,0 +1,11 @@
+.header, .status-col, .main-stat, .no-scrapy-stats {
+    text-align: center;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.main-stats, .scrapy-stats {
+    margin-top: 32px;
+}

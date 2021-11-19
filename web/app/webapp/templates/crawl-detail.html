@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block styles -%}
+{{super()}}  {# do not forget to call super or Bootstrap's own stylesheets will disappear! #}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='crawl-detail.css')}}">
+{% endblock %}
+{% macro scrapystats(dict) %}
+<ul>
+    {% for key, value in dict.items() %}
+    <li>
+        {{ key }}:
+        {% if value is mapping %}
+            {{ scrapystats(value) }}
+        {% else %}
+            {{ value }}
+        {% endif%}
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-12 header">
+            <h1>{{_('Details of crawl:')}} <span class="bold">{{ detail.start_url }}</span></h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-12 status-col">
+            <h3>{{_('Status')}}: <span class="bold">{{ detail.crawl_status }}</span></h3>
+        </div>
+    </div>
+    <div class="row main-stats">
+        <div class="col-sm-3 main-stat"><span class="bold">{{_('Start time')}}:</span> {{ detail.timestamp }}</div>
+        <div class="col-sm-3 main-stat"><span class="bold">{{_('Duration')}}:</span> {{ detail.crawl_duration_seconds }}s</div>
+        <div class="col-sm-3 main-stat"><span class="bold">{{_('URLs found')}}:</span> {{ detail.url_amount }}</div>
+        <div class="col-sm-3 main-stat"><span class="bold">{{_('Pages crawled')}}:</span> {{ detail.crawled_pages_amount }}</div>
+    </div>
+    <div class="row scrapy-stats">
+        <div class="col-sm-5"></div>
+        <div class="col-sm-2 scrapy-stats-col">
+            {% if detail.stats %}
+                <p>Scrapy Stats:</p>
+                {{ scrapystats(detail.stats) }}
+            {% else %}
+            <p class="no-scrapy-stats">{{_('No scrapy stats available')}}</p>
+            {% endif %}
+        </div>
+        <div class="col-sm-5"></div>
+    </div>
+</div>
+{% endblock %}
