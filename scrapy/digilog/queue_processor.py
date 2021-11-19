@@ -22,7 +22,7 @@ class RunOptions:
 
 
 def process_entry(entry: QueueEntry):
-    run(['python', 'run_crawl.py', 'queued', str(entry.id), '-s', 'MAX_DEPTH=2'])
+    run(['python', 'run_crawl.py', 'queued', str(entry.id), '-s', 'DEPTH_LIMIT=2'])
 
 
 async def process_queue():
