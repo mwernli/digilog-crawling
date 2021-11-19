@@ -21,5 +21,4 @@ def crawls():
 @bp.route('/crawls/detail/<int:crawl_id>', methods=['GET'])
 def crawl_detail(crawl_id: int):
     result = api.crawl_details(crawl_id).json
-    print(result)
     return render_template('crawl-detail.html', detail=result)
