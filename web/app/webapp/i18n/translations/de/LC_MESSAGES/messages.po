@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-11-14 18:13+0100\n"
+"POT-Creation-Date: 2021-11-19 19:06+0100\n"
 "PO-Revision-Date: 2021-11-14 18:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -17,6 +17,34 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
+
+#: webapp/templates/crawl-detail.html:24
+msgid "Details of crawl:"
+msgstr "Crawl-Details für:"
+
+#: webapp/templates/crawl-detail.html:29
+msgid "Status"
+msgstr "Status"
+
+#: webapp/templates/crawl-detail.html:33
+msgid "Start time"
+msgstr "Gestartet um"
+
+#: webapp/templates/crawl-detail.html:34
+msgid "Duration"
+msgstr "Dauer"
+
+#: webapp/templates/crawl-detail.html:35
+msgid "URLs found"
+msgstr "Gefundene URLs"
+
+#: webapp/templates/crawl-detail.html:36
+msgid "Pages crawled"
+msgstr "Gecrawlte Seiten"
+
+#: webapp/templates/crawl-detail.html:45
+msgid "No scrapy stats available"
+msgstr "Keine Scrapy stats verfügbar"
 
 #: webapp/templates/crawls-overview.html:8
 msgid "Inserted at"
