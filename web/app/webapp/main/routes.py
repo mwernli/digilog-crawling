@@ -12,10 +12,10 @@ def index():
 
 @bp.route('/crawls', methods=['GET'])
 def crawls():
-    crawl_views = api.crawls().json
-    for item in crawl_views['crawl_overviews']:
+    crawl_overview = api.crawls().json
+    for item in crawl_overview['crawl_views']:
         item['details_url'] = url_for('main.crawl_detail', crawl_id=item['id'])
-    return render_template('crawls-overview.html', crawls=crawl_views['crawl_overviews'])
+    return render_template('crawls-overview.html', crawls=crawl_overview)
 
 
 @bp.route('/crawls/detail/<int:crawl_id>', methods=['GET'])

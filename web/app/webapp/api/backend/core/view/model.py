@@ -6,19 +6,19 @@ from ..repository.model import CrawlEntity, CrawlQueueEntity
 
 
 @dataclass(frozen=True)
-class CrawlOverview:
+class CrawlView:
     id: int
     top_url: str
     inserted_at: datetime
 
     @staticmethod
     def from_entity(entity: CrawlEntity):
-        return CrawlOverview(entity.id, entity.top_url, entity.inserted_at)
+        return CrawlView(entity.id, entity.top_url, entity.inserted_at)
 
 
 @dataclass(frozen=True)
-class CrawlOverviews:
-    crawl_overviews: List[CrawlOverview]
+class CrawlOverview:
+    crawl_views: List[CrawlView]
 
 
 @dataclass(frozen=True)
