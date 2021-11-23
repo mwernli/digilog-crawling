@@ -6,6 +6,7 @@ nav = Nav()
 nav.register_element('frontend_top', Navbar(
     View('Digilog', 'main.index'),
     View('Crawls', 'main.crawls'),
+    View('Queue', 'main.queue'),
     Subgroup(
         'Docs',
         Link('Flask-Bootstrap', 'http://pythonhosted.org/Flask-Bootstrap'),

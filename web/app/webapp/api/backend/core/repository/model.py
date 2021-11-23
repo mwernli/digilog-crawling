@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from enum import Enum
 
 
 @dataclass(frozen=True)
@@ -25,11 +26,18 @@ class BasicCrawlStats:
         return BasicCrawlStats(crawl_id, record[0], record[1], record[2].seconds)
 
 
+class QueueStatus(Enum):
+    NEW = 'NEW'
+    IN_PROGRESS = 'IN_PROGRESS'
+    DONE = 'DONE'
+    ERROR = 'ERROR'
+
+
 @dataclass(frozen=True)
 class CrawlQueueEntity:
     id: int
     top_url: str
-    status: str
+    status: QueueStatus
     priority: int
     inserted_at: datetime
     updated_at: datetime
@@ -37,4 +45,12 @@ class CrawlQueueEntity:
 
     @staticmethod
     def from_record(record):
-        return CrawlQueueEntity(record[0], record[1], record[2], record[3], record[4], record[5], record[6])
+        return CrawlQueueEntity(
+            record[0],
+            record[1],
+            QueueStatus[record[2]],
+            record[3],
+            record[4],
+            record[5],
+            record[6],
+        )

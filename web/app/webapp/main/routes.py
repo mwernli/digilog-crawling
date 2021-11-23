@@ -22,3 +22,9 @@ def crawls():
 def crawl_detail(crawl_id: int):
     result = api.crawl_details(crawl_id).json
     return render_template('crawl-detail.html', detail=result)
+
+
+@bp.route('/queue', methods=['GET'])
+def queue():
+    queue_overview = api.queue().json
+    return render_template('queue-overview.html', queue_overview=queue_overview)
