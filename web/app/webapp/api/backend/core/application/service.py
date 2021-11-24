@@ -30,7 +30,7 @@ def load_crawl_details(ds: DataSource, crawl_id: int) -> CrawlDetail:
 
 def determine_crawl_status(crawl_detail: CrawlDetail) -> CrawlStatus:
     if crawl_detail.queue_entry is not None:
-        return CrawlStatus[crawl_detail.queue_entry.status]
+        return CrawlStatus[crawl_detail.queue_entry.status.name]
     elif crawl_detail.stats is not None:
         return CrawlStatus.DONE
     else:
