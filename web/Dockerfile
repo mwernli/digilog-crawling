@@ -4,7 +4,7 @@ RUN useradd digilog
 
 WORKDIR /home/digilog
 
-ENV FLASK_APP digilog.py
+ENV FLASK_APP wsgi.py
 
 COPY requirements.txt requirements.txt
 RUN python -m venv venv && \
