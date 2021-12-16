@@ -14,7 +14,7 @@ logging.NOTSET = 1
 
 
 os.environ['OUTSIDE_NETWORK'] = '1'
-os.chdir('/home/ubuntu/digilog/digilog-crawling/crontab')
+# os.chdir('/home/ubuntu/digilog/digilog-crawling/crontab')
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     os.chdir(os.path.join(os.getcwd(), '../scrapy'))
     with multiprocessing.Pool(5) as pool:
-        for i in pool.imap_unordered(run_crawling, urls[:10]):
+        for i in pool.imap_unordered(run_crawling, urls):
             pass
             # print(i)
     os.chdir(os.path.join(os.getcwd(), '../crontab'))

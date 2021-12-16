@@ -10,8 +10,8 @@ class MongoDbConnection:
     def mongo(self):
         # self.host = 'localhost'
         self.host = 'digilog-mongodb'
-        self.port = 27017
         # self.port = 5550
+        self.port = 27017
         self.user = 'root'
         self.password = 'mongopwd'
         connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
