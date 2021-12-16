@@ -39,24 +39,17 @@ class SimplePipeline:
         url = normalize_url(spider.url)
         self.crawl_id = spider.ds.postgres.insert_crawl(url)
         logger.info("Inserted new crawl with ID: {}".format(self.crawl_id))
-        head_id = spider.ds.postgres.insert_first_result_record(self.crawl_id, url)
+        head_id = spider.ds.postgres.insert_result_record(self.crawl_id, url)
         self.url_dict[url] = head_id
         if hasattr(spider, 'queue_entry'):
             spider.ds.postgres.insert_queue_crawl_connection(spider.queue_entry.id, self.crawl_id)
 
     def process_item(self, item, spider):
         url = normalize_url(item['url'])
-        links = item['links']
-        if url in self.url_dict:
-            parent_id = self.url_dict[url]
-        else:
-            logger.warning("Parent URL not found for: {}".format(url))
-            logger.debug("URL-Dict was: {}".format(self.url_dict))
-            parent_id = None
-        mongo_id = spider.ds.mongodb.insert_crawl_result(self.crawl_id, parent_id, item['html'], item['raw_text'])
-        spider.ds.postgres.update_mongo_id(parent_id, str(mongo_id))
-        children = spider.ds.postgres.insert_child_links(self.crawl_id, parent_id, links, normalize_url)
-        self.url_dict.update(children)
+        current_id = spider.ds.postgres.insert_result_record(self.crawl_id, url)
+        mongo_id = spider.ds.mongodb.insert_crawl_result(self.crawl_id, current_id, item['html'], item['raw_text'])
+        spider.ds.postgres.update_mongo_id(current_id, str(mongo_id))
+        spider.ds.postgres.insert_child_links(self.crawl_id, item['links'], normalize_url)
 
     def close_spider(self, spider):
         queue_id = spider.queue_entry.id if hasattr(spider, 'queue_entry') else None

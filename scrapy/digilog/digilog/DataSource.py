@@ -88,32 +88,47 @@ class PostgresConnection:
                     (queue_id, crawl_id)
                 )
 
-    def insert_first_result_record(self, crawl_id: int, url: str) -> int:
+    def insert_result_record(self, crawl_id: int, url: str) -> int:
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO crawl_result (crawl_id, url, link_text, parent)
-                    VALUES (%s, %s, %s, %s)
-                    RETURNING id;
+                    INSERT INTO crawl_result (crawl_id, url, link_text)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (crawl_id, url) DO NOTHING;
                     """,
-                    (crawl_id, url, '', None)
+                    (crawl_id, url, '')
+                )
+                cursor.execute(
+                    """
+                    SELECT id from crawl_result
+                    WHERE crawl_id = %s AND url = %s
+                    """,
+                    (crawl_id, url)
                 )
                 result = cursor.fetchone()[0]
                 return result
 
-    def insert_child_links(self, crawl_id: int, parent: int, links: List[Link], mapper: Callable[[str], str]) -> Dict[str, int]:
+    def insert_child_links(self, crawl_id: int, links: List[Link], mapper: Callable[[str], str]) -> Dict[str, int]:
         with self.connection as connection:
             with connection.cursor() as cursor:
+                urls = set()
+                to_insert = []
+                for l in links:
+                    mapped_url = mapper(l.url)
+                    if mapped_url not in urls:
+                        to_insert.append((crawl_id, mapped_url, condense(l.text)))
+                        urls.add(mapped_url)
+
                 result = execute_values(
                     cursor,
                     """
-                    INSERT INTO crawl_result (crawl_id, url, link_text, parent)
+                    INSERT INTO crawl_result (crawl_id, url, link_text)
                     VALUES %s
-                    ON CONFLICT (crawl_id, url) DO NOTHING
+                    ON CONFLICT (crawl_id, url) DO UPDATE set link_text = EXCLUDED.link_text 
                     RETURNING id, url
                     """,
-                    map(lambda l: (crawl_id, mapper(l.url), condense(l.text), parent), links),
+                    to_insert,
                     fetch=True,
                 )
                 children = {}

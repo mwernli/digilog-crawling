@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<table id="data" class="table table-striped">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>{{_('Queued URL')}}</th>
+        <th>{{_('Status')}}</th>
+        <th>{{_('Priority')}}</th>
+        <th>{{_('Inserted at')}}</th>
+        <th>{{_('Updated at')}}</th>
+        <th>{{_('Reason')}}</th>
+        <th>{{_('Duration [s]')}}</th>
+    </tr>
+    </thead>
+</table>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+{% set detail_name %}
+{{_('Details')}}
+{% endset %}
+<script>
+    $(document).ready(function () {
+        const queue_overview = {{ queue_overview | tojson }}
+        $('#data').DataTable({
+            data: queue_overview.queue_views,
+            columns: [
+                {data: 'id', orderable: true},
+                {data: 'top_url', orderable: true},
+                {data: 'status', orderable: true},
+                {data: 'priority', orderable: true},
+                {data: 'inserted_at', orderable: true},
+                {data: 'updated_at', orderable: true},
+                {data: 'reason', orderable: true},
+                {data: 'duration', orderable: true},
+            ],
+        });
+        console.log(queue_overview);
+    });
+</script>
+{% endblock %}

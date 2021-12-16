@@ -96,7 +96,7 @@ R = TypeVar('R')
 
 def call(handler: Callable[[DataSource], R]) -> R:
     with DataConnectionProvider() as dc:
-        with dc.postgres as postgres_connection, dc.mongodb:
+        with dc.postgres.connection as postgres_connection, dc.mongodb:
             ds = DataSource(postgres_connection, dc.mongodb.db, dc.mongodb.session)
             return handler(ds)
 

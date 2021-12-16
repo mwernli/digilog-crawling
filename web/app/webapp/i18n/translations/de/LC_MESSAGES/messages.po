@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-11-19 19:06+0100\n"
+"POT-Creation-Date: 2021-11-23 21:12+0100\n"
 "PO-Revision-Date: 2021-11-14 18:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -22,7 +22,7 @@ msgstr ""
 msgid "Details of crawl:"
 msgstr "Crawl-Details für:"
 
-#: webapp/templates/crawl-detail.html:29
+#: webapp/templates/crawl-detail.html:29 webapp/templates/queue-overview.html:9
 msgid "Status"
 msgstr "Status"
 
@@ -47,6 +47,7 @@ msgid "No scrapy stats available"
 msgstr "Keine Scrapy stats verfügbar"
 
 #: webapp/templates/crawls-overview.html:8
+#: webapp/templates/queue-overview.html:11
 msgid "Inserted at"
 msgstr "Eingefügt am"
 
@@ -56,6 +57,28 @@ msgstr "Ausgangs-URL"
 
 #: webapp/templates/crawls-overview.html:10
 #: webapp/templates/crawls-overview.html:19
+#: webapp/templates/queue-overview.html:23
 msgid "Details"
 msgstr "Details"
+
+#: webapp/templates/queue-overview.html:8
+msgid "Queued URL"
+msgstr "URL"
+
+#: webapp/templates/queue-overview.html:10
+msgid "Priority"
+msgstr "Priorität"
+
+#: webapp/templates/queue-overview.html:12
+msgid "Updated at"
+msgstr "Geändert am"
+
+#: webapp/templates/queue-overview.html:13
+msgid "Reason"
+msgstr "Grund"
+
+#: webapp/templates/queue-overview.html:14
+#, fuzzy
+msgid "Duration [s]"
+msgstr "Dauer"
 

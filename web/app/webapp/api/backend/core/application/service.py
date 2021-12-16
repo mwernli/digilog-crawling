@@ -1,10 +1,10 @@
-from typing import Iterator
+from typing import Iterator, Iterable
 
 from .model import CrawlDetail, CrawlStatus
 from ..common.model import DataSource
-from ..repository.crawlqueuerepository import load_crawl_queue_entry_by_crawl_id
+from ..repository.crawlqueuerepository import load_crawl_queue_entry_by_crawl_id, load_crawl_queue_entries
 from ..repository.crawlrepository import load_crawls, load_crawl_by_id, load_basic_crawl_stats_by_crawl_id
-from ..repository.model import CrawlEntity
+from ..repository.model import CrawlEntity, CrawlQueueEntity
 from ..repository.statsrepository import load_stats_for_crawl_id
 
 
@@ -30,7 +30,7 @@ def load_crawl_details(ds: DataSource, crawl_id: int) -> CrawlDetail:
 
 def determine_crawl_status(crawl_detail: CrawlDetail) -> CrawlStatus:
     if crawl_detail.queue_entry is not None:
-        return CrawlStatus[crawl_detail.queue_entry.status]
+        return CrawlStatus[crawl_detail.queue_entry.status.name]
     elif crawl_detail.stats is not None:
         return CrawlStatus.DONE
     else:
@@ -43,3 +43,6 @@ def determine_crawl_duration_seconds(crawl_detail: CrawlDetail) -> float:
     else:
         return crawl_detail.time_delta
 
+
+def load_all_crawl_queue_entries(ds: DataSource, row_limit: int) -> Iterable[CrawlQueueEntity]:
+    return load_crawl_queue_entries(ds, row_limit)

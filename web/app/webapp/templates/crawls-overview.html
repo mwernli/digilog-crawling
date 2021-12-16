@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block app_content %}
 <table id="data" class="table table-striped">
     <thead>
     <tr>
@@ -22,7 +22,7 @@
     $(document).ready(function () {
         const crawls = {{ crawls | tojson }}
         $('#data').DataTable({
-            data: crawls,
+            data: crawls.crawl_views,
             columns: [
                 {data: 'id', orderable: true},
                 {data: 'inserted_at', orderable: true},
@@ -33,7 +33,6 @@
                 },
             ],
         });
-
     });
 </script>
 {% endblock %}
