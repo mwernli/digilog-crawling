@@ -2,36 +2,44 @@
 Crawler &amp; Data Storage for the digilog project
 
 ## Setup
-After the first pull to the server run
-```
-cd web/
-docker build -t digilogweb3 -
-cd ..
-docker-compose up -d
-cd scrapy/
-docker build -t scrapy .
-```
-
-After every pull, run the following commands from the repository's root directory:
+After the very first pull, run the following command in the project root directory:
 ```
 docker-compose up -d
-cd scrapy/
-docker build -t scrapy .
 ```
-The command `docker-compose up -d` will start the postgres-DB container (`digilog-postgres`) and the mongoDB-Container (`digilog-mongodb`). Find the exposed ports by running `docker ps` or check the file `docker-compose.yaml`. This file also includes the login information for the databases.
-Additionally, the command applies migrations for the Postgres-DB using [flyway](https://github.com/flyway/flyway-docker).
-All three containers will be connected to the same Docker-bridge network `digilog-data-network`.
+This will take a while because docker has to download all the images needed to run the project. After the download,
+docker will automatically start all containers, including [flyway](https://github.com/flyway/flyway-docker) to migrate the database.
+When starting the system for the first time you also need to create an index in Kibana in order to view the logs (see Logging section).
 
-The Dockerfile in the scrapy-folder is used for building an image which can run the scrapy crawler. The folder scrapy/digilog is the root folder of a scrapy project called digilog and will be mounted into the container at runtime. This means the image does not have to be rebuilt when making changes to the code.
+After every subsequent pull, some containers may have to be rebuilt, depending on what has changed. For example, after 
+changes to the web application, rebuild the container using the following command:
+```
+docker-compose up -d --build web
+```
+Check the status of the system by running `docker ps`.
+You should see seven digilog-containers running:
+* digilog-web
+* digilog-postgres
+* digilog-crawl-queue-processor
+* digilog-mongodb
+* digilog-kibana
+* digilog-fluentd
+* digilog-elasticsearch
+
+If a container is missing there was probably a problem while starting it. To find the exit code, use `docker ps -a`.
+To find potential error messages, use `docker logs <container-name>`.
+ 
+`docker ps` also displays the exposed ports for each container, accessible at `localhost:<port>`. You can also check the file `docker-compose.yaml`. This file includes the login information for the databases.
+
+The Dockerfile in the scrapy-folder is used for building an image which can run the scrapy crawler. The folder scrapy/digilog is the root folder of a scrapy project called digilog and will be mounted into the container at runtime. This means the image does not have to be rebuilt when making changes to the code (but the container may have to be restarted).
 
 ## Flyway migrations
 To make changes to the postgres schema or add masterdata follow these steps:
 1. Create an SQL-File containing your migration in the folder `postgres/flywaymigrations/`.
 2. Name the file in this pattern: `V0.XXXX__name_describing_your_script.sql`, where XXXX is the next migration number (four digits with padded zeros). The migration number must be strictly increasing and larger than any migration numbers already present in the folder.
-3. Run `docker-compose up -d` in the project root directory to apply your migrations to the postgres-DB.
+3. Run `docker-compose up -d --build flyway` in the project root directory to apply your migrations to the postgres-DB.
 
 ### Important notes about flyway migrations
-* **Never** touch any of the existing migration files that have already been applied. Flyway will notice the change refuse to apply any further migrations until the issue is resolved manually.
+* **Never** touch any of the existing migration files that have already been applied. Flyway will notice the change and refuse to apply any further migrations until the issue is resolved manually.
 * **Never** rename any of the existing migration files, for the same reason as above. The order of the migration files is determined by the filenames and must never change once applied.
 * Make changes to schema and masterdata only through flyway migrations. This way, the postgres database can be setup anew on any machine where the project should run. It also guarantees that future migrations commited by other users will work on your local development database and the database on the server.
 * Before pushing migrations to the upstream, make sure your local repository is up to date. Otherwise the order of migration files might not be correct anymore.
@@ -43,8 +51,13 @@ Run the following command to connect to the PostgreSQL-DB:
 docker exec -it digilog-postgres psql postgresql://digilog@localhost/digilog
 ```
 ## Logging
-All logs go to Kibana via Dockers fluentd-driver. Navigate to http://localhost:5601 to inspect the logs. Filter for 
-@log_name to see the log output of a container of a specific image (postgres-db, flyway, mongo-db, scrapy).
+All logs go to Kibana via Dockers fluentd-driver. Navigate to http://localhost:5601 to inspect the logs (choose Analytics -> Discover from the menu).
+
+After an initial setup, you need to create an index pattern so Kibana knows which data to display.
+If this is the case a button labelled "Create index pattern" should be visible after navigating to Analytics -> Discover.
+Click this button and enter `fluentd-*` as the index pattern name and click "next step". Choose `@timestamp` in the dropdown and then click "Create index pattern".
+
+Filter for @log_name to see the log output of a container of a specific image (postgres-db, flyway, mongo-db, scrapy).
 ## Crawling
 ### Running a crawl
 Use the scrapy-image built above to run a crawl of a webpage like so:
@@ -70,7 +83,7 @@ e.g.
 ```
 The script applies a DEPTH_LIMIT of 2.
 ### Crawling results
-Each crawl will generate a unique record in the `crawl` table including its url and a timestamp. Then, each crawled URL will generate a record in the `crawl_result` table, including the URL, the text of the link on the page a reference to the `crawl` and to its parent page (also in `crawl_result`). The column `mongo_id` contains the `ObjectId` of the mongo-DB-Document where the actual content of the webpage is stored (database `digilog`, collection `simpleresults`). Some metadata like the `crawl_id` and `result_id` from postgres are also stored for convenience.
+Each crawl will generate a unique record in the `crawl` table including its url and a timestamp. Then, each crawled URL will generate a record in the `crawl_result` table, including the URL, the text of the link on the page a reference to the `crawl` and to its parent page (also in `crawl_result`). The column `mongo_id` contains the `ObjectId` of the mongo-DB-Document where the actual content of the webpage is stored (database `digilog`, collection `simpleresults`). Note that page contents may not be available for every entry in `crawl_result`. Some metadata like the `crawl_id` and `result_id` from postgres are also stored for convenience.
 
 ### Spiders
 #### simple
