@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block styles -%}
+{{super()}}  {# do not forget to call super or Bootstrap's own stylesheets will disappear! #}
+{% endblock %}
+{% block app_content %}
+<table id="data" class="table table-striped">
+    <thead>
+    <tr>
+        <th>{{_('Code')}}</th>
+        <th>{{_('Name EN')}}</th>
+        <th>{{_('Name DE')}}</th>
+        <th>{{_('Details')}}</th>
+    </tr>
+    </thead>
+</table>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+{% set detail_name %}
+{{_('Details')}}
+{% endset %}
+<script>
+    $(document).ready(function () {
+        const countries = {{ countries | tojson }}
+        console.log(countries);
+        $('#data').DataTable({
+            data: countries,
+            columns: [
+                {data: 'code', searchable: true, orderable: true},
+                {data: 'name.en', searchable: true, orderable: false},
+                {data: 'name.de', searchable: true, orderable: false},
+                {data: 'details_url', searchable: false, orderable: false, render: (url) => {
+                        return `<a href="${url}">{{detail_name}}</a>`;
+                    }
+                },
+            ],
+        });
+    });
+</script>
+{% endblock %}

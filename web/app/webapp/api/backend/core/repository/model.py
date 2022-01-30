@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -53,4 +54,71 @@ class CrawlQueueEntity:
             record[4],
             record[5],
             record[6],
+        )
+
+
+@dataclass(frozen=True)
+class TranslatedText:
+    de: str
+    en: str
+
+
+@dataclass(frozen=True)
+class CountryEntity:
+    code: str
+    name: TranslatedText
+
+    @staticmethod
+    def from_record(record):
+        return CountryEntity(
+            record[0],
+            TranslatedText(
+                record[2],
+                record[1],
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class StateEntity:
+    id: int
+    name: str
+    country_code: str
+
+    @staticmethod
+    def from_record(record):
+        return StateEntity(
+            record[0],
+            record[1],
+            record[2],
+        )
+
+
+@dataclass(frozen=True)
+class MunicipalityEntity:
+    id: int
+    name: str
+    url: str
+    state_id: int
+
+    @staticmethod
+    def from_record(record):
+        return MunicipalityEntity(
+            record[0],
+            record[1],
+            record[2],
+            record[3],
+        )
+
+
+@dataclass(frozen=True)
+class QueueCrawl:
+    queue_entity: CrawlQueueEntity
+    crawl_entity: Optional[CrawlEntity]
+
+    @staticmethod
+    def from_record(record):
+        return QueueCrawl(
+            CrawlQueueEntity.from_record(record[:7]),
+            CrawlEntity.from_record(record[7:]) if record[7] is not None else None,
         )

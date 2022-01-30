@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-11-23 21:12+0100\n"
+"POT-Creation-Date: 2022-01-30 14:47+0100\n"
 "PO-Revision-Date: 2021-11-14 18:07+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: de\n"
@@ -18,10 +18,97 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
 
+#: webapp/admin/forms.py:8 webapp/templates/admin/state-detail.html:18
+msgid "URL"
+msgstr "URL"
+
+#: webapp/admin/forms.py:9
+msgid "Save changes"
+msgstr "Speichern"
+
+#: webapp/admin/forms.py:13
+msgid "Enqueue crawl"
+msgstr "Crawl einplanen"
+
+#: webapp/admin/routes.py:16
+msgid "Countries"
+msgstr "Länder"
+
+#: webapp/api/backend/auth/email.py:9
+#: webapp/templates/auth/reset_password.html:5
+msgid "Reset Your Password"
+msgstr "Passwort zurücksetzen"
+
+#: webapp/api/backend/auth/forms.py:11 webapp/api/backend/auth/forms.py:18
+msgid "Username"
+msgstr "Username"
+
+#: webapp/api/backend/auth/forms.py:12 webapp/api/backend/auth/forms.py:20
+#: webapp/api/backend/auth/forms.py:44
+msgid "Password"
+msgstr "Passwort"
+
+#: webapp/api/backend/auth/forms.py:13
+msgid "Remember Me"
+msgstr "Angemeldet bleiben"
+
+#: webapp/api/backend/auth/forms.py:14 webapp/api/backend/auth/routes.py:29
+#: webapp/templates/auth/login.html:5
+msgid "Sign In"
+msgstr "Anmelden"
+
+#: webapp/api/backend/auth/forms.py:19 webapp/api/backend/auth/forms.py:38
+#, fuzzy
+msgid "Email"
+msgstr "Email"
+
+#: webapp/api/backend/auth/forms.py:22 webapp/api/backend/auth/forms.py:48
+msgid "Repeat Password"
+msgstr "Passwort wiederholen"
+
+#: webapp/api/backend/auth/forms.py:24 webapp/api/backend/auth/routes.py:47
+#: webapp/templates/auth/register.html:5
+msgid "Register"
+msgstr "Registrieren"
+
+#: webapp/api/backend/auth/forms.py:29
+msgid "Please use a different username."
+msgstr "Benutzername bereits vergeben."
+
+#: webapp/api/backend/auth/forms.py:34
+msgid "Please use a different email address."
+msgstr "Email Adresse bereits vorhanden"
+
+#: webapp/api/backend/auth/forms.py:39 webapp/api/backend/auth/forms.py:51
+msgid "Request Password Reset"
+msgstr "Passwort zurücksetzen"
+
+#: webapp/api/backend/auth/routes.py:22
+msgid "Invalid username or password"
+msgstr "Ungülter Username oder Passwort"
+
+#: webapp/api/backend/auth/routes.py:45
+msgid "Congratulations, you are now a registered user!"
+msgstr "Gratulation, Sie sind registriert"
+
+#: webapp/api/backend/auth/routes.py:60
+msgid "Check your email for the instructions to reset your password"
+msgstr "Sie erhalten eine Email zum zurücksetzen des Passworts"
+
+#: webapp/api/backend/auth/routes.py:64
+#: webapp/templates/auth/reset_password_request.html:6
+msgid "Reset Password"
+msgstr "Passwort zurücksetzen"
+
+#: webapp/api/backend/auth/routes.py:77
+msgid "Your password has been reset."
+msgstr "Ihr Passwort wurde zurückgesetzt"
+
 #: webapp/templates/crawl-detail.html:24
 msgid "Details of crawl:"
 msgstr "Crawl-Details für:"
 
+#: webapp/templates/admin/municipality-detail.html:30
 #: webapp/templates/crawl-detail.html:29 webapp/templates/queue-overview.html:9
 msgid "Status"
 msgstr "Status"
@@ -46,6 +133,7 @@ msgstr "Gecrawlte Seiten"
 msgid "No scrapy stats available"
 msgstr "Keine Scrapy stats verfügbar"
 
+#: webapp/templates/admin/municipality-detail.html:32
 #: webapp/templates/crawls-overview.html:8
 #: webapp/templates/queue-overview.html:11
 msgid "Inserted at"
@@ -55,30 +143,85 @@ msgstr "Eingefügt am"
 msgid "Starting URL"
 msgstr "Ausgangs-URL"
 
+#: webapp/templates/admin/countries.html:12
+#: webapp/templates/admin/countries.html:21
+#: webapp/templates/admin/country-detail.html:18
+#: webapp/templates/admin/country-detail.html:28
+#: webapp/templates/admin/municipality-detail.html:37
+#: webapp/templates/admin/municipality-detail.html:49
+#: webapp/templates/admin/state-detail.html:19
+#: webapp/templates/admin/state-detail.html:29
 #: webapp/templates/crawls-overview.html:10
 #: webapp/templates/crawls-overview.html:19
 #: webapp/templates/queue-overview.html:23
 msgid "Details"
 msgstr "Details"
 
+#: webapp/templates/admin/municipality-detail.html:29
 #: webapp/templates/queue-overview.html:8
 msgid "Queued URL"
 msgstr "URL"
 
+#: webapp/templates/admin/municipality-detail.html:31
 #: webapp/templates/queue-overview.html:10
 msgid "Priority"
 msgstr "Priorität"
 
+#: webapp/templates/admin/municipality-detail.html:33
 #: webapp/templates/queue-overview.html:12
 msgid "Updated at"
 msgstr "Geändert am"
 
+#: webapp/templates/admin/municipality-detail.html:34
 #: webapp/templates/queue-overview.html:13
 msgid "Reason"
 msgstr "Grund"
 
+#: webapp/templates/admin/municipality-detail.html:36
 #: webapp/templates/queue-overview.html:14
 #, fuzzy
 msgid "Duration [s]"
 msgstr "Dauer"
+
+#: webapp/templates/admin/countries.html:9
+msgid "Code"
+msgstr "Code"
+
+#: webapp/templates/admin/countries.html:10
+msgid "Name EN"
+msgstr "Name EN"
+
+#: webapp/templates/admin/countries.html:11
+msgid "Name DE"
+msgstr "Name DE"
+
+#: webapp/templates/admin/country-detail.html:16
+#: webapp/templates/admin/state-detail.html:16
+msgid "Id"
+msgstr "Id"
+
+#: webapp/templates/admin/country-detail.html:17
+#: webapp/templates/admin/state-detail.html:17
+msgid "Name"
+msgstr "Name"
+
+#: webapp/templates/admin/municipality-detail.html:35
+msgid "Crawl started at"
+msgstr "Crawl gestarted am"
+
+#: webapp/templates/auth/login.html:12
+msgid "New User?"
+msgstr "Neuer Benutzer?"
+
+#: webapp/templates/auth/login.html:12
+msgid "Click to Register!"
+msgstr "Registrieren"
+
+#: webapp/templates/auth/login.html:14
+msgid "Forgot Your Password?"
+msgstr "Passwort vergessen?"
+
+#: webapp/templates/auth/login.html:15
+msgid "Click to Reset It"
+msgstr "Zurücksetzen"
 

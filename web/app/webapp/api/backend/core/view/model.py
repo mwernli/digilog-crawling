@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Union
+from typing import List, Union, Optional
 
-from ..repository.model import CrawlEntity, CrawlQueueEntity
+from ..repository.model import CrawlEntity, CrawlQueueEntity, TranslatedText, StateEntity, MunicipalityEntity, \
+    QueueCrawl
 
 
 @dataclass(frozen=True)
@@ -63,6 +64,37 @@ class QueueOverview:
 
 
 def queue_entry_duration(entry: CrawlQueueEntity) -> float:
-    print(entry.updated_at)
-    print(entry.inserted_at)
+    print(entry.status)
     return (entry.updated_at - entry.inserted_at).total_seconds()
+
+
+@dataclass(frozen=True)
+class CountryDetailView:
+    code: str
+    name: TranslatedText
+    states: List[StateEntity]
+
+
+@dataclass(frozen=True)
+class StateDetailView:
+    entity: StateEntity
+    municipalities: List[MunicipalityEntity]
+
+
+@dataclass(frozen=True)
+class QueueCrawlView:
+    queue_view: QueueView
+    crawl_entity: Optional[CrawlEntity]
+
+    @staticmethod
+    def from_queue_crawl(queue_crawl: QueueCrawl):
+        return QueueCrawlView(
+            QueueView.from_entity(queue_crawl.queue_entity),
+            queue_crawl.crawl_entity,
+        )
+
+
+@dataclass(frozen=True)
+class MunicipalityDetailView:
+    entity: MunicipalityEntity
+    queue_crawls: List[QueueCrawlView]
