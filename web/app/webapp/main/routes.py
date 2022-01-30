@@ -1,4 +1,4 @@
-from flask import render_template, url_for
+from flask import render_template, url_for, redirect
 
 from . import bp
 from ..api import routes as api
@@ -7,7 +7,7 @@ from ..api import routes as api
 @bp.route('/', methods=['GET'])
 @bp.route('/index', methods=['GET'])
 def index():
-    return render_template('index.html')
+    return redirect(url_for('main.crawls'))
 
 
 @bp.route('/crawls', methods=['GET'])
