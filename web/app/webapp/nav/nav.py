@@ -1,5 +1,5 @@
 from flask_nav import Nav
-from flask_nav.elements import Navbar, View, Subgroup, Separator
+from flask_nav.elements import Navbar, View, Subgroup
 
 
 def _login_link():
@@ -26,9 +26,7 @@ def _auth_items():
 def _super_admin_items():
     from webapp.api.backend.auth.service import is_super_admin
     if is_super_admin():
-        return [
-            Separator(),
-        ]
+        return []  # Items for super admin
     return []
 
 
