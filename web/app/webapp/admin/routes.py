@@ -36,20 +36,20 @@ def state_detail(state_id: int):
 def municipality_detail(municipality_id: int):
     data_form = MunicipalityForm()
     crawl_form = MunicipalityCrawl()
-    print()
     if crawl_form.enqueue.name in request.form and crawl_form.validate_on_submit():
-        municipality_view = api.enqueue_crawl(municipality_id).json
+        api.enqueue_crawl(municipality_id)
+        return redirect(url_for('admin.municipality_detail', municipality_id=municipality_id))
     elif data_form.save.name in request.form and data_form.validate_on_submit():
         update_data = {
             'url': data_form.url.data
         }
-        municipality_view = api.municipality(municipality_id, update_data).json
+        api.municipality(municipality_id, update_data)
+        return redirect(url_for('admin.municipality_detail', municipality_id=municipality_id))
     else:
         municipality_view = api.municipality(municipality_id).json
     data_form.url.data = municipality_view['entity']['url']
     for item in municipality_view['queue_crawls']:
         if 'crawl_entity' in item and item['crawl_entity'] is not None:
-            print(item)
             item['crawl_entity']['details_url'] = url_for('main.crawl_detail', crawl_id=item['crawl_entity']['id'])
     return render_template(
         'admin/municipality-detail.html',
