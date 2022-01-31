@@ -64,7 +64,6 @@ class QueueOverview:
 
 
 def queue_entry_duration(entry: CrawlQueueEntity) -> float:
-    print(entry.status)
     return (entry.updated_at - entry.inserted_at).total_seconds()
 
 

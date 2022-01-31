@@ -15,7 +15,6 @@ from webapp.config import Config
 def register_user(ds: DataSource, form: RegistrationForm) -> Union[User, None]:
     pw_hash = generate_password_hash(form.password.data)
     user = insert_new_user(ds, form.username.data, form.email.data, pw_hash)
-    print(user)
     return user
 
 
