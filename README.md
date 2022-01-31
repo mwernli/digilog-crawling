@@ -15,6 +15,10 @@ changes to the web application, rebuild the container using the following comman
 ```
 docker-compose up -d --build web
 ```
+In some cases, e.g. a pure code change, it might suffice to restart the container without rebuilding it:
+```
+docker restart <container-name>
+```
 Check the status of the system by running `docker ps`.
 You should see seven digilog-containers running:
 * digilog-web
@@ -71,7 +75,8 @@ where `<MODE>` is one of the following (see also [official docker documentation]
 Note that the `<URL>` must include the protocol (http[s]://).
 
 Additionally, any further configuration settings can be passed to scrapy with the syntax `-s SETTING_KEY1=value1 SETTING_KEY2=value2`, as documented [here](https://docs.scrapy.org/en/latest/topics/settings.html).
-For example, use `-s DEPTH_LIMIT=3` to limit the depth of the crawl on large websites.
+For example, use `-s DEPTH_LIMIT=3` to limit the depth of the crawl on large websites. A full list of all possible settings can be found in the scrapy documentation [here](https://docs.scrapy.org/en/latest/topics/settings.html#built-in-settings-reference).
+
 
 You can also use the convenience script in the scrapy folder like this:
 ```
