@@ -96,6 +96,7 @@ services:
     restart: always
     ports:
       - 80:5000
+      - 5000:5000
     volumes:
       - ./web/app/webapp:/home/digilog/webapp
     depends_on:
