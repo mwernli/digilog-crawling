@@ -20,11 +20,10 @@ class BasicCrawlStats:
     crawl_id: int
     url_amount: int
     crawled_pages_amount: int
-    timedelta: float
 
     @staticmethod
     def from_record(crawl_id: int, record):
-        return BasicCrawlStats(crawl_id, record[0], record[1], record[2].seconds)
+        return BasicCrawlStats(crawl_id, record[0], record[1])
 
 
 class QueueStatus(Enum):

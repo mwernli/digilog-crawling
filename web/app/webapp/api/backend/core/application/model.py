@@ -12,7 +12,6 @@ class CrawlDetail:
     timestamp: datetime
     url_amount: int
     crawled_pages_amount: int
-    time_delta: float
     stats: Union[dict, None]
     queue_entry: Union[CrawlQueueEntity, None]
 
