@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+{% block styles -%}
+{{super()}}  {# do not forget to call super or Bootstrap's own stylesheets will disappear! #}
+<link rel="stylesheet" type="text/css" href="{{url_for('static', filename='municipality-detail.css')}}">
+{% endblock %}
+{% block app_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="center-text">{{ municipality_view.entity.name }}</h1>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-5">
+            {{ wtf.quick_form(data_form) }}
+        </div>
+        <div class="col-md-2"></div>
+        <div class="col-md-5">
+            {{ wtf.quick_form(crawl_form) }}
+        </div>
+    </div>
+    <div class="row queue-data-container">
+        <div class="col-md-12">
+            <table id="queue-data" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>{{_('Queued URL')}}</th>
+                    <th>{{_('Status')}}</th>
+                    <th>{{_('Priority')}}</th>
+                    <th>{{_('Inserted at')}}</th>
+                    <th>{{_('Updated at')}}</th>
+                    <th>{{_('Reason')}}</th>
+                    <th>{{_('Crawl started at')}}</th>
+                    <th>{{_('Duration [s]')}}</th>
+                    <th>{{_('Details')}}</th>
+                </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+{% set detail_name %}
+{{_('Details')}}
+{% endset %}
+<script>
+    $(document).ready(function () {
+        const queue_overview = {{ municipality_view.queue_crawls | tojson }}
+        $('#queue-data').DataTable({
+            data: queue_overview,
+            order: [[5, 'desc']],
+            columns: [
+                {data: 'queue_view.id', orderable: true},
+                {data: 'queue_view.top_url', orderable: true},
+                {data: 'queue_view.status', orderable: true},
+                {data: 'queue_view.priority', orderable: true},
+                {data: 'queue_view.inserted_at', orderable: true},
+                {data: 'queue_view.updated_at', orderable: true},
+                {data: 'queue_view.reason', orderable: true},
+                {data: 'crawl_entity.inserted_at', defaultContent: '', orderable: true},
+                {data: 'queue_view.duration', orderable: true},
+                {data: 'crawl_entity.details_url', defaultContent: '', title: 'Details', searchable: false, orderable: false, render: (url) => {
+                    if (url === undefined) return ''
+                    else return `<a href="${url}">{{detail_name}}</a>`
+                    }
+                },
+            ],
+        });
+    });
+</script>
+{% endblock %}

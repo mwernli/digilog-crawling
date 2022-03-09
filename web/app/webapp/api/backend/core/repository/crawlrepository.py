@@ -42,14 +42,10 @@ def load_basic_crawl_stats_by_crawl_id(ds: DataSource, crawl_id: int) -> BasicCr
             crawled_page_amount AS (
                 SELECT COUNT(*) as amount FROM digilog.digilog.crawl_result
                 WHERE crawl_id = %s AND mongo_id IS NOT NULL
-            ),
-            time_delta AS (
-                SELECT max(inserted_at) - min(inserted_at) from digilog.digilog.crawl_result
-                WHERE crawl_id = %s
             )
-            SELECT * FROM url_amount CROSS JOIN crawled_page_amount CROSS JOIN time_delta
+            SELECT * FROM url_amount CROSS JOIN crawled_page_amount
             """,
-            (crawl_id, crawl_id, crawl_id)
+            (crawl_id, crawl_id)
         )
         result = c.fetchone()
         return BasicCrawlStats.from_record(crawl_id, result)
