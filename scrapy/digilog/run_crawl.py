@@ -19,6 +19,7 @@ def parse_args(args):
     subparsers = parser.add_subparsers(help='running modes')
     add_simple_spider_parser(subparsers)
     add_queued_parser(subparsers)
+    add_pointer_parser(subparsers)
     arguments = parser.parse_args(args)
     return arguments
 
@@ -37,6 +38,13 @@ def add_queued_parser(subparsers):
     queued_parser.add_argument('id', type=int, help='The ID of the queue entry to process')
     add_settings_parser(queued_parser)
     return queued_parser
+
+def add_pointer_parser(subparsers):
+    pointer_spider_parser = subparsers.add_parser('pointer', help='the pointer crawler spider')
+    pointer_spider_parser.set_defaults(func=run_pointer)
+    pointer_spider_parser.add_argument('URL', type=str, help='The URL to start the crawl from')
+    add_settings_parser(pointer_spider_parser)
+    return pointer_spider_parser    
 
 
 def add_settings_parser(parser):
@@ -76,6 +84,22 @@ def run_queued(args):
     process = CrawlerProcess(settings=settings, install_root_handler=False)
 
     process.crawl('queued', queue_id=args.id)
+    process.start()  # the script will block here until the crawling is finished
+
+def run_pointer(args):
+    settings = get_project_settings()
+    for setting in args.settings:
+        key, value = setting.split('=')
+        settings.set(key, value)
+    log_level = settings.get('LOG_LEVEL')
+    handler = logging.StreamHandler()
+    handler.setFormatter(NewlineRemovingFormatter(settings.get('LOG_FORMAT'), settings.get('LOG_DATEFORMAT')))
+    handler.setLevel(log_level)
+    logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
+
+    process = CrawlerProcess(settings=settings, install_root_handler=False)
+
+    process.crawl('pointer', url=args.URL)
     process.start()  # the script will block here until the crawling is finished
 
 
