@@ -63,29 +63,29 @@ class PostgresConnection:
         )
         return connection
 
-    def insert_crawl(self, top_url: str) -> int:
+    def insert_crawl(self, top_url: str, crawl_type: str) -> int:
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO crawl (top_url)
-                    VALUES (%s)
+                    INSERT INTO crawl (top_url, crawl_type)
+                    VALUES (%s, %s)
                     RETURNING id
                     """,
-                    (top_url,)
+                    (top_url, crawl_type)
                 )
                 result = cursor.fetchone()[0]
                 return result
 
-    def insert_queue_crawl_connection(self, queue_id: int, crawl_id: int):
+    def insert_queue_crawl_connection(self, queue_id: int, crawl_id: int, crawl_type: str):
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO queue_crawl (queue_id, crawl_id)
-                    VALUES (%s, %s)
+                    INSERT INTO queue_crawl (queue_id, crawl_id, crawl_type)
+                    VALUES (%s, %s, %s)
                     """,
-                    (queue_id, crawl_id)
+                    (queue_id, crawl_id, crawl_type)
                 )
 
     def insert_result_record(self, crawl_id: int, url: str) -> int:

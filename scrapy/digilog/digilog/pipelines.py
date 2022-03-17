@@ -36,12 +36,12 @@ class SimplePipeline:
     def open_spider(self, spider):
         url = normalize_url(spider.url)
         if not hasattr(spider, 'crawl_id'):
-            spider.crawl_id = spider.ds.postgres.insert_crawl(url)
+            spider.crawl_id = spider.ds.postgres.insert_crawl(url, spider.name)
             logger.info("Inserted new crawl with ID: {}".format(spider.crawl_id))
         head_id = spider.ds.postgres.insert_result_record(spider.crawl_id, url)
         self.url_dict[url] = head_id
         if hasattr(spider, 'queue_entry'):
-            spider.ds.postgres.insert_queue_crawl_connection(spider.queue_entry.id, spider.crawl_id)
+            spider.ds.postgres.insert_queue_crawl_connection(spider.queue_entry.id, spider.crawl_id, spider.name)
 
     def process_item(self, item, spider):
         url = normalize_url(item['url'])
