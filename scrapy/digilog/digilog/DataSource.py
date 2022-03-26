@@ -1,13 +1,14 @@
+import os
+import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import List, Dict, Callable, Optional
 
 import psycopg2
 from bson import ObjectId
-from pymongo import MongoClient
 from psycopg2.extras import execute_values
+from pymongo import MongoClient
 from scrapy.link import Link
-import re
 
 _CONDENSE_WS_PATTERN = re.compile(r'\s+')
 
@@ -29,6 +30,17 @@ class QueueStatus(Enum):
     ERROR = 'ERROR'
 
 
+def get_env_str(name: str) -> str:
+    try:
+        return os.environ[name]
+    except KeyError:
+        raise ValueError(f'Environment variable "{name}" is not set')
+
+
+def get_env_int(name: str) -> int:
+    return int(get_env_str(name))
+
+
 class DataSource:
     def __init__(self):
         self.postgres = PostgresConnection()
@@ -42,15 +54,19 @@ class DataSource:
 class PostgresConnection:
     def __init__(self, called_from_container:bool = True):
         if called_from_container:
-            self.host = 'digilog-postgres'
-            self.port = 5432
+            self.host = get_env_str('POSTGRES_SERVICE_HOST')
+            self.port = get_env_int('POSTGRES_SERVICE_PORT')
+            self.user = get_env_str('POSTGRES_USER')
+            self.password = get_env_str('POSTGRES_PASSWORD')
+            self.db = get_env_str('POSTGRES_DB')
+            self.schema = get_env_str('POSTGRES_DB')
         else:
             self.host = 'localhost'
             self.port = 5500
-        self.user = 'digilog'
-        self.password = 'password'
-        self.db = 'digilog'
-        self.schema = 'digilog'
+            self.user = 'digilog'
+            self.password = 'password'
+            self.db = 'digilog'
+            self.schema = 'digilog'
         self.connection = self._connect()
 
     def _connect(self):
@@ -77,15 +93,15 @@ class PostgresConnection:
                 result = cursor.fetchone()[0]
                 return result
 
-    def insert_queue_crawl_connection(self, queue_id: int, crawl_id: int, crawl_type: str):
+    def insert_queue_crawl_connection(self, queue_id: int, crawl_id: int):
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO queue_crawl (queue_id, crawl_id, crawl_type)
-                    VALUES (%s, %s, %s)
+                    INSERT INTO queue_crawl (queue_id, crawl_id)
+                    VALUES (%s, %s)
                     """,
-                    (queue_id, crawl_id, crawl_type)
+                    (queue_id, crawl_id)
                 )
 
     def insert_result_record(self, crawl_id: int, url: str) -> int:
@@ -206,15 +222,17 @@ class PostgresConnection:
 
 
 class MongoDbConnection:
-    def __init__(self, called_from_container:bool = True):
+    def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = 'digilog-mongodb'
-            self.port = 27017
+            self.host = get_env_str('MONGODB_SERVICE_HOST')
+            self.port = get_env_int('MONGODB_SERVICE_PORT')
+            self.user = get_env_str('MONGODB_USER')
+            self.password = get_env_str('MONGODB_PASSWORD')
         else:
             self.host = 'localhost'
             self.port = 5550
-        self.user = 'root'
-        self.password = 'mongopwd'
+            self.user = 'root'
+            self.password = 'mongopwd'
         self.connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
         self.client = MongoClient(self.connection_string)
         self.db = self.client.digilog
