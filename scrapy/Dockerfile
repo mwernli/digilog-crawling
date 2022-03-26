@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-slim AS dev
 
 RUN apt-get update && apt-get install gcc libffi-dev libpq-dev -y && apt-get clean
 
@@ -14,3 +14,6 @@ RUN pip install --upgrade pip && pip install --no-warn-script-location --user -r
 WORKDIR /src
 
 ENTRYPOINT ["python", "/src/run_crawl.py"]
+
+FROM dev AS packaged
+COPY ./digilog/ /src
