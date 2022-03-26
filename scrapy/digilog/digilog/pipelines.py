@@ -41,7 +41,7 @@ class SimplePipeline:
         head_id = spider.ds.postgres.insert_result_record(spider.crawl_id, url)
         self.url_dict[url] = head_id
         if hasattr(spider, 'queue_entry'):
-            spider.ds.postgres.insert_queue_crawl_connection(spider.queue_entry.id, spider.crawl_id, spider.name)
+            spider.ds.postgres.insert_queue_crawl_connection(spider.queue_entry.id, spider.crawl_id)
 
     def process_item(self, item, spider):
         url = normalize_url(item['url'])
