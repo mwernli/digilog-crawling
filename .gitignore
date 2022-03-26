@@ -1,5 +1,5 @@
 # project files
-postgres/.db
+flyway/.db
 mongodb/.db
 
 # Byte-compiled / optimized / DLL files
@@ -131,3 +131,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+.idea/
