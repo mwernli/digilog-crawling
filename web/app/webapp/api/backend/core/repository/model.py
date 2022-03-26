@@ -118,6 +118,6 @@ class QueueCrawl:
     @staticmethod
     def from_record(record):
         return QueueCrawl(
-            CrawlQueueEntity.from_record(record[:7]),
-            CrawlEntity.from_record(record[7:]) if record[7] is not None else None,
+            CrawlQueueEntity.from_record(record[:8]),
+            CrawlEntity.from_record(record[8:]) if record[8] is not None else None,
         )

@@ -25,7 +25,7 @@ class QueuedEntrySpider(scrapy.Spider):
         scheme = parsed_url.scheme or 'http://'
         normalized_url = scheme + normalize_url(self.queue_entry.url)
 
-        self.crawl_id = self.ds.postgres.insert_crawl(normalized_url)
+        self.crawl_id = self.ds.postgres.insert_crawl(normalized_url, self.name)
         self.logger.info("Inserted new crawl with URL {},  ID [{}]".format(normalized_url, self.crawl_id))
 
         self.url = normalized_url
