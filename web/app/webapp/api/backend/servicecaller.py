@@ -5,6 +5,7 @@ import psycopg2
 from pymongo import MongoClient
 
 from .core.common.model import DataSource
+from .framework import get_env_str, get_env_int
 
 
 class DataConnection:
@@ -24,15 +25,19 @@ class DataConnection:
 class PostgresConnection:
     def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = 'digilog-postgres'
-            self.port = 5432
+            self.host = get_env_str('POSTGRES_SERVICE_HOST')
+            self.port = get_env_int('POSTGRES_SERVICE_PORT')
+            self.user = get_env_str('POSTGRES_USER')
+            self.password = get_env_str('POSTGRES_PASSWORD')
+            self.db = get_env_str('POSTGRES_DB')
+            self.schema = get_env_str('POSTGRES_DB')
         else:
             self.host = 'localhost'
             self.port = 5500
-        self.user = 'digilog'
-        self.password = 'password'
-        self.db = 'digilog'
-        self.schema = 'digilog'
+            self.user = 'digilog'
+            self.password = 'password'
+            self.db = 'digilog'
+            self.schema = 'digilog'
         self.connection = self._connect()
 
     def _connect(self):
@@ -58,13 +63,15 @@ class PostgresConnection:
 class MongoDbConnection:
     def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = 'digilog-mongodb'
-            self.port = 27017
+            self.host = get_env_str('MONGODB_SERVICE_HOST')
+            self.port = get_env_int('MONGODB_SERVICE_PORT')
+            self.user = get_env_str('MONGODB_USER')
+            self.password = get_env_str('MONGODB_PASSWORD')
         else:
             self.host = 'localhost'
             self.port = 5550
-        self.user = 'root'
-        self.password = 'mongopwd'
+            self.user = 'root'
+            self.password = 'mongopwd'
         self.connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
         self.client = MongoClient(self.connection_string)
         self.session = self.client.start_session()
