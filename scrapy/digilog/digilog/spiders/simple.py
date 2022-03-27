@@ -1,10 +1,9 @@
-import scrapy
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from urllib3.util import parse_url
 
+import scrapy
 from ..DataSource import DataSource
 from ..items import RawItem
-from bs4 import BeautifulSoup
 
 
 class SimpleSpider(scrapy.Spider):
@@ -23,14 +22,12 @@ class SimpleSpider(scrapy.Spider):
 
     def parse(self, response):
         html = response.text
-        soup = BeautifulSoup(html, 'html.parser')
-        raw_text = soup.get_text()
         url = response.request.url
         depth = response.request.meta['depth']
 
         links = self.link_extractor.extract_links(response)
 
-        yield RawItem(html=html, raw_text=raw_text, url=url, links=links, depth=depth)
+        yield RawItem(html=html, url=url, links=links, depth=depth)
 
         for link in links:
             yield response.follow(link, self.parse)

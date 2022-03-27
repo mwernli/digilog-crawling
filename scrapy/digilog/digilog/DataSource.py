@@ -237,12 +237,11 @@ class MongoDbConnection:
         self.client = MongoClient(self.connection_string)
         self.db = self.client.digilog
 
-    def insert_crawl_result(self, crawl_id: int, result_id: int, html: str, raw_text: str) -> ObjectId:
+    def insert_crawl_result(self, crawl_id: int, result_id: int, html: str) -> ObjectId:
         doc = {
             'crawl_id': crawl_id,
             'result_id': result_id,
             'html': html,
-            'raw_text': raw_text
         }
         result = self.db.simpleresults.insert_one(doc)
         return result.inserted_id

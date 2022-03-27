@@ -9,7 +9,6 @@ import scrapy
 class RawItem(scrapy.Item):
     # define the fields for your item here like:
     html = scrapy.Field()
-    raw_text = scrapy.Field()
     url = scrapy.Field()
     links = scrapy.Field()
     depth = scrapy.Field()
