@@ -1,9 +1,9 @@
 from typing import List
 
+import scrapy
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from urllib3.util import parse_url
 
-import scrapy
 from ..DataSource import DataSource, QueueStatus
 from ..items import RawItem
 from ..pipelines import normalize_url
@@ -32,7 +32,7 @@ class QueuedEntrySpider(scrapy.Spider):
     def start_requests(self):
         yield scrapy.Request(self.url)
 
-    def parse(self, response):
+    def parse(self, response, **kwargs):
         html = response.text
         url = response.request.url
         depth = response.request.meta['depth']
