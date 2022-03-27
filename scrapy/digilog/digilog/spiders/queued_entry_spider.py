@@ -44,7 +44,7 @@ class QueuedEntrySpider(scrapy.Spider):
 
         yield RawItem(html=html, raw_text=raw_text, url=url, links=links, depth=depth)
 
-        for link in links:
+        for link in filter(self.filter_extensions, links):
             yield response.follow(link, self.parse)
 
     def closed(self, reason):
@@ -58,6 +58,13 @@ class QueuedEntrySpider(scrapy.Spider):
         nested_stats = stats_to_nested_dict(self.crawler.stats.get_stats())
         stats_id = self.ds.mongodb.insert_crawl_stats(nested_stats, self.crawl_id, self.queue_entry.id)
         self.ds.postgres.insert_crawl_stats_connection(self.crawl_id, str(stats_id))
+
+    def filter_extensions(self, link):
+        for extension in self.link_extractor.deny_extensions:
+            if link.text.endswith(extension):
+                self.logger.info(f'Filtering out link "{link}" because of extension "{extension}"')
+                return False
+        return True
 
 
 def stats_to_nested_dict(scrapy_stats: dict) -> dict:
