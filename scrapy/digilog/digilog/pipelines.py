@@ -46,6 +46,6 @@ class SimplePipeline:
     def process_item(self, item, spider):
         url = normalize_url(item['url'])
         current_id = spider.ds.postgres.insert_result_record(spider.crawl_id, url)
-        mongo_id = spider.ds.mongodb.insert_crawl_result(spider.crawl_id, current_id, item['html'], item['raw_text'])
+        mongo_id = spider.ds.mongodb.insert_crawl_result(spider.crawl_id, current_id, item['html'])
         spider.ds.postgres.update_mongo_id(current_id, str(mongo_id))
         spider.ds.postgres.insert_child_links(spider.crawl_id, item['links'], normalize_url)
