@@ -28,14 +28,14 @@
         $('#data').DataTable({
             data: queue_overview.queue_views,
             columns: [
-                {data: 'id', orderable: true},
-                {data: 'top_url', orderable: true},
-                {data: 'status', orderable: true},
-                {data: 'priority', orderable: true},
-                {data: 'inserted_at', orderable: true},
-                {data: 'updated_at', orderable: true},
-                {data: 'reason', orderable: true},
-                {data: 'duration', orderable: true},
+                {data: 'queue_view.id', orderable: true},
+                {data: 'queue_view.top_url', orderable: true},
+                {data: 'queue_view.status', orderable: true},
+                {data: 'queue_view.priority', orderable: true},
+                {data: 'queue_view.inserted_at', orderable: true},
+                {data: 'queue_view.updated_at', orderable: true},
+                {data: 'queue_view.reason', orderable: true},
+                {data: 'queue_view.duration', orderable: true},
             ],
         });
     });

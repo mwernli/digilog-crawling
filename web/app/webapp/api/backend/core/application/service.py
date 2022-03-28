@@ -4,9 +4,9 @@ from typing import Iterable
 from .model import CrawlDetail, CrawlStatus
 from ..common.model import DataSource
 from ..repository import placerepository, crawlqueuerepository
-from ..repository.crawlqueuerepository import load_crawl_queue_entry_by_crawl_id, load_crawl_queue_entries
+from ..repository.crawlqueuerepository import load_crawl_queue_entry_by_crawl_id
 from ..repository.crawlrepository import load_crawls, load_crawl_by_id, load_basic_crawl_stats_by_crawl_id
-from ..repository.model import CrawlEntity, CrawlQueueEntity, CountryEntity, StateEntity, MunicipalityEntity, \
+from ..repository.model import CrawlEntity, CountryEntity, StateEntity, MunicipalityEntity, \
     QueueCrawl, QueueStatus
 from ..repository.statsrepository import load_stats_for_crawl_id
 
@@ -46,8 +46,8 @@ def determine_crawl_duration_seconds(crawl_detail: CrawlDetail) -> float:
         return (datetime.now() - crawl_detail.timestamp).total_seconds()
 
 
-def load_all_crawl_queue_entries(ds: DataSource, row_limit: int) -> Iterable[CrawlQueueEntity]:
-    return load_crawl_queue_entries(ds, row_limit)
+def load_queue_crawls_with_limit(ds: DataSource, row_limit: int) -> Iterable[QueueCrawl]:
+    return crawlqueuerepository.load_queue_crawls_with_limit(ds, row_limit)
 
 
 def load_all_countries(ds: DataSource) -> Iterable[CountryEntity]:
@@ -87,4 +87,4 @@ def enqueue_municipality_crawl(ds: DataSource, municipality_id: int) -> Municipa
 
 def get_municipality_queue_crawls(ds: DataSource, municipality_id: int) -> Iterable[QueueCrawl]:
     queue_ids = placerepository.load_municipality_queue_ids(ds, municipality_id)
-    return crawlqueuerepository.load_queue_crawls(ds, queue_ids)
+    return crawlqueuerepository.load_queue_crawls_of_queue_ids(ds, queue_ids)
