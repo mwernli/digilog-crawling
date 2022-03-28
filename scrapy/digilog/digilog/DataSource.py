@@ -164,21 +164,26 @@ class PostgresConnection:
                     (mongo_id, result_id)
                 )
 
-    def load_new_queue_entries(self, max_entries: int = 10) -> List[QueueEntry]:
+    def load_next_queue_entry(self) -> Optional[QueueEntry]:
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, top_url
-                    FROM crawling_queue
-                    WHERE status = 'NEW'
-                    ORDER BY priority
-                    LIMIT %s
+                    UPDATE crawling_queue
+                    SET status = 'PENDING'
+                    WHERE id = (
+                        SELECT id FROM crawling_queue
+                        WHERE status = 'NEW'
+                        ORDER BY priority
+                        LIMIT 1
+                        FOR UPDATE SKIP LOCKED
+                    ) RETURNING id, top_url;
                     """,
-                    (max_entries,)
                 )
-                result = cursor.fetchall()
-                return [QueueEntry(row[0], row[1]) for row in result]
+                result = cursor.fetchone()
+                if not result:
+                    return None
+                return QueueEntry(result[0], result[1])
 
     def get_queue_entry_by_id(self, id: int) -> QueueEntry:
         with self.connection as connection:

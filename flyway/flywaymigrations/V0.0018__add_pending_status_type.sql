@@ -1,0 +1,2 @@
+
+ALTER TYPE queue_status ADD VALUE 'PENDING' AFTER 'NEW';
