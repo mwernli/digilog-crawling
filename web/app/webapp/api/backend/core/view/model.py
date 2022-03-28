@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List, Union, Optional
 
 from ..repository.model import CrawlEntity, CrawlQueueEntity, TranslatedText, StateEntity, MunicipalityEntity, \
-    QueueCrawl
+    QueueCrawl, QueueStatus
 
 
 @dataclass(frozen=True)
@@ -45,7 +45,7 @@ class QueueView:
     duration: float
 
     @staticmethod
-    def from_entity(entity: CrawlQueueEntity):
+    def from_entity(entity: CrawlQueueEntity, crawl: Optional[CrawlEntity]):
         return QueueView(
             entity.id,
             entity.top_url,
@@ -54,17 +54,18 @@ class QueueView:
             entity.inserted_at,
             entity.updated_at,
             entity.reason,
-            queue_entry_duration(entity),
+            queue_entry_duration(entity, crawl),
         )
 
 
-@dataclass(frozen=True)
-class QueueOverview:
-    queue_views: List[QueueView]
-
-
-def queue_entry_duration(entry: CrawlQueueEntity) -> float:
-    return (entry.updated_at - entry.inserted_at).total_seconds()
+def queue_entry_duration(entry: CrawlQueueEntity, crawl: Optional[CrawlEntity]) -> float:
+    if crawl is None or entry.status == QueueStatus.NEW or entry.status == QueueStatus.PENDING:
+        return 0
+    if entry.status == QueueStatus.IN_PROGRESS:
+        calc_from = datetime.now()
+    else:
+        calc_from = entry.updated_at
+    return (calc_from - crawl.inserted_at).total_seconds()
 
 
 @dataclass(frozen=True)
@@ -88,9 +89,14 @@ class QueueCrawlView:
     @staticmethod
     def from_queue_crawl(queue_crawl: QueueCrawl):
         return QueueCrawlView(
-            QueueView.from_entity(queue_crawl.queue_entity),
+            QueueView.from_entity(queue_crawl.queue_entity, queue_crawl.crawl_entity),
             queue_crawl.crawl_entity,
         )
+
+
+@dataclass(frozen=True)
+class QueueOverview:
+    queue_views: List[QueueCrawlView]
 
 
 @dataclass(frozen=True)

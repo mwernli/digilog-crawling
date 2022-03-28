@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from .model import CrawlView, CrawlOverview, CrawlDetailView, QueueView, QueueOverview, CountryDetailView, \
+from .model import CrawlView, CrawlOverview, CrawlDetailView, QueueOverview, CountryDetailView, \
     StateDetailView, MunicipalityDetailView, QueueCrawlView
 from ..application import service
 from ..common.model import DataSource
@@ -28,8 +28,8 @@ def get_crawl_detail(ds: DataSource, crawl_id: int) -> CrawlDetailView:
 
 
 def get_queue_overview(ds: DataSource, row_limit: int) -> QueueOverview:
-    queue_entries = service.load_all_crawl_queue_entries(ds, row_limit)
-    return QueueOverview(list(map(QueueView.from_entity, queue_entries)))
+    queue_crawls = service.load_queue_crawls_with_limit(ds, row_limit)
+    return QueueOverview(list(map(QueueCrawlView.from_queue_crawl, queue_crawls)))
 
 
 def get_all_countries(ds: DataSource) -> List[CountryEntity]:

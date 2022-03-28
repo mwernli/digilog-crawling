@@ -28,6 +28,7 @@ class BasicCrawlStats:
 
 class QueueStatus(Enum):
     NEW = 'NEW'
+    PENDING = 'PENDING'
     IN_PROGRESS = 'IN_PROGRESS'
     DONE = 'DONE'
     ERROR = 'ERROR'
