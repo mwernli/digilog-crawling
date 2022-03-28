@@ -21,4 +21,4 @@ EXPOSE 5000
 ENTRYPOINT ["./boot.sh"]
 
 FROM dev AS packaged
-COPY ./app/webapp/ /home/digilog/webapp
+COPY --chown=digilog ./app/webapp/ /home/digilog/webapp
