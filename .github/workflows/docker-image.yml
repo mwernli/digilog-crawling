@@ -14,5 +14,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build scrapy image
-      run: docker build --tag digilog-scrapy ./scrapy/.
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_HUB_USER }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    - name: Build and push
+      uses: docker/build-push-action@v2
+      with:
+        context: ./scrapy/.
+        push: true
+        tags: trephor/digilog-scrapy
