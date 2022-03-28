@@ -19,9 +19,21 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
-    - name: Build and push
+    - name: "scrapy: Build and push"
       uses: docker/build-push-action@v2
       with:
         context: ./scrapy/.
         push: true
         tags: trephor/digilog-scrapy
+    - name: "web: Build and push"
+      uses: docker/build-push-action@v2
+      with:
+        context: ./web/.
+        push: true
+        tags: trephor/digilog-web
+    - name: "flyway: Build and push"
+      uses: docker/build-push-action@v2
+      with:
+        context: ./flyway/.
+        push: true
+        tags: trephor/digilog-flyway
