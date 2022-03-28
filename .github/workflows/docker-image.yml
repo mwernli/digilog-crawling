@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build scrapy image
-      run: docker build --file scrapy/Dockerfile --tag digilog-scrapy
+      run: docker build --tag digilog-scrapy ./scrapy/.
