@@ -1,6 +1,7 @@
 import logging
 import os
 import re
+import sys
 from sqlalchemy import create_engine
 import pandas as pd
 import os
@@ -10,6 +11,10 @@ from multiprocessing import log_to_stderr, get_logger
 import time
 import numpy as np
 import subprocess
+sys.path.insert(1,'/home/gerj/Documents/GitHub/digilog-crawling/analysis/')
+from DataSourceSlim import DataSourceSlim
+ds = DataSourceSlim()
+
 logging.NOTSET = 1
 
 
@@ -41,28 +46,40 @@ def do_logging(secs):
     logger.info(str(secs))
     # print(str(secs))
     
-def run_crawling(url):
+def run_crawling_simple(munic):
+    url, name = munic
+    start = time.time()
     subprocess.run(['sudo','sh', './simple_crawl.sh', '-t', url])
-    
+    duration_s = time.time() - start
+    ds.mongo.db.crawlingtimes.insert_one({
+        'url':url
+        'duration_s': duration_s,
+        'name': name,
+        'time': str(time.asctime()),
+        'crawltype': 'simple'
+        })
+
 
 
 if __name__ == '__main__':
     df = get_gde_url()
-    urls = [url for url in df.url.values]
-    url_bools = [bool(re.match('http://', url)) or bool(re.match('https://', url)) for url in urls]
+    urls = [tuple(line) for line in df.to_numpy()]
+    url_bools = [bool(re.match('http://', url)) or bool(re.match('https://', url)) for url, name in urls]
 
-    for i in range(len(urls)):
+    for i, line in enumerate(urls):
+        url, name = urls[i]
         if url_bools[i]:
             pass
         else:
-            urls[i] = 'http://'+ urls[i]
+            url = 'http://'+ url
+        urls[i] = (url, name)
 
-    urls = [(url) for url in urls if bool(re.search('wikipedia', url)) != True]
+    urls = [(url, name) for url, name in urls if bool(re.search('wikipedia', url)) != True]
     # urls = ['http://www.hittnau.ch']
 
     os.chdir(os.path.join(os.getcwd(), '../scrapy'))
     with multiprocessing.Pool(5) as pool:
-        for i in pool.imap_unordered(run_crawling, urls):
+        for i in pool.imap_unordered(run_crawling_simple, urls):
             pass
             # print(i)
     os.chdir(os.path.join(os.getcwd(), '../crontab'))

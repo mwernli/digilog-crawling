@@ -14,6 +14,8 @@ def get_gde_url():
     except KeyError:
         host = 'digilog-postgres'
         port = '5432'
+        # host = 'localhost'
+        # port = '5500'
     user = 'digilog'
     password = 'password'
     database = 'digilog'
