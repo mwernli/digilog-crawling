@@ -64,7 +64,14 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
     if nlp.max_length != NLP_MAX_LENGTH:
         nlp.max_length =  NLP_MAX_LENGTH
         logger.info(f'resetting nlp max_length from {nlp.max_length}to {NLP_MAX_LENGTH}')
-    postgres_result = ds.postgres.interact_postgres(f'SELECT (loc_gov_ch.id, loc_gov_ch.url, loc_gov_ch.gdename) FROM loc_gov_ch LEFT JOIN crawl ON loc_gov_ch.url = crawl.top_url WHERE crawl.id = {crawl_id}' )
+    postgres_result = ds.postgres.interact_postgres(f'SELECT (loc_gov_ch.id, loc_gov_ch.url, loc_gov_ch.gdename) FROM loc_gov_ch LEFT JOIN crawl ON loc_gov_ch.url = crawl.top_url WHERE crawl.id = {crawl_id}')
+    
+    if len(postgres_result) == 0:
+        url = ds.postgres.interact_postgres(f'SELECT (crawl.top_url) FROM crawl WHERE id = {crawl_id}')[0][0]
+        cursor = ds.postgres.connection.cursor()
+        cursor.execute('SELECT (id, url, gdename) FROM loc_gov_ch WHERE url = %s;',(url.split("//")[-1],))
+        postgres_result = cursor.fetchall()
+
     try:
         postgres_result = re.split(',',postgres_result[0][0].replace('(','').replace(')',''))
     except:
