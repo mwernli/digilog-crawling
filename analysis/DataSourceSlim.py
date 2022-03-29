@@ -8,10 +8,10 @@ class MongoDbConnection:
         self.mongo()
 
     def mongo(self):
-        self.host = 'localhost'
-        # self.host = 'digilog-mongodb'
-        self.port = 5550
-        # self.port = 27017
+        # self.host = 'localhost'
+        self.host = 'digilog-mongodb'
+        # self.port = 5550
+        self.port = 27017
         self.user = 'root'
         self.password = 'mongopwd'
         connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
@@ -36,10 +36,10 @@ class PostresDbConnection:
         self.postgres()
 
     def postgres(self):
-        self.host = 'localhost'
-        self.port = '5500'
-        # self.host = 'digilog-postgres'
-        # self.port = 5432
+        # self.host = 'localhost'
+        # self.port = '5500'
+        self.host = 'digilog-postgres'
+        self.port = 5432
         self.user = 'digilog'
         self.password = 'password'
         self.db = 'digilog'
