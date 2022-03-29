@@ -1,0 +1,2 @@
+ALTER TABLE crawl_analysis
+ADD COLUMN IF NOT EXISTS log_gov_id int DEFAULT NULL;
