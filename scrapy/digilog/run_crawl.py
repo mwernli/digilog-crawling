@@ -1,6 +1,7 @@
-import sys
 import argparse
 import logging
+import sys
+
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 
@@ -39,6 +40,7 @@ def add_queued_parser(subparsers):
     add_settings_parser(queued_parser)
     return queued_parser
 
+
 def add_pointer_parser(subparsers):
     pointer_spider_parser = subparsers.add_parser('pointer', help='the pointer crawler spider')
     pointer_spider_parser.set_defaults(func=run_pointer)
@@ -51,16 +53,28 @@ def add_settings_parser(parser):
     parser.add_argument('-s', type=str, nargs='*', dest='settings', metavar='KEY=VALUE', help='scrapy settings')
 
 
-def run_simple(args):
+def merge_settings_with_args(settings_args):
     settings = get_project_settings()
-    for setting in args.settings:
+    for setting in settings_args:
         key, value = setting.split('=')
         settings.set(key, value)
+    return settings
+
+
+def configure_logging(settings, log_format=None):
+    if log_format is None:
+        log_format = settings.get('LOG_FORMAT')
     log_level = settings.get('LOG_LEVEL')
-    handler = logging.StreamHandler()
-    handler.setFormatter(NewlineRemovingFormatter(settings.get('LOG_FORMAT'), settings.get('LOG_DATEFORMAT')))
+    handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
+    handler.setFormatter(NewlineRemovingFormatter(log_format, settings.get('LOG_DATEFORMAT')))
     handler.setLevel(log_level)
     logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
+
+
+def run_simple(args):
+    settings = merge_settings_with_args(args.settings)
+
+    configure_logging(settings)
 
     process = CrawlerProcess(settings=settings, install_root_handler=False)
 
@@ -69,33 +83,22 @@ def run_simple(args):
 
 
 def run_queued(args):
-    settings = get_project_settings()
-    for setting in args.settings:
-        key, value = setting.split('=')
-        settings.set(key, value)
-    log_level = settings.get('LOG_LEVEL')
-    handler = logging.StreamHandler()
+    settings = merge_settings_with_args(args.settings)
+
     configured_log_format = str(settings.get('LOG_FORMAT'))
-    queued_log_format = configured_log_format.replace('%(asctime)s', '%(asctime)s [QueueEntry {}]'.format(args.id))
-    handler.setFormatter(NewlineRemovingFormatter(queued_log_format, settings.get('LOG_DATEFORMAT')))
-    handler.setLevel(log_level)
-    logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
+    queued_log_format = configured_log_format.replace('%(asctime)s', '%(asctime)s [queue-entry-{}]'.format(args.id))
+    configure_logging(settings, queued_log_format)
 
     process = CrawlerProcess(settings=settings, install_root_handler=False)
 
     process.crawl('queued', queue_id=args.id)
     process.start()  # the script will block here until the crawling is finished
 
+
 def run_pointer(args):
-    settings = get_project_settings()
-    for setting in args.settings:
-        key, value = setting.split('=')
-        settings.set(key, value)
-    log_level = settings.get('LOG_LEVEL')
-    handler = logging.StreamHandler()
-    handler.setFormatter(NewlineRemovingFormatter(settings.get('LOG_FORMAT'), settings.get('LOG_DATEFORMAT')))
-    handler.setLevel(log_level)
-    logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
+    settings = merge_settings_with_args(args.settings)
+
+    configure_logging(settings)
 
     process = CrawlerProcess(settings=settings, install_root_handler=False)
 
