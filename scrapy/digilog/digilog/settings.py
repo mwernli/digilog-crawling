@@ -94,4 +94,7 @@ DEPTH_PRIORITY = 1
 SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleFifoDiskQueue'
 SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
 
-DOWNLOAD_MAXSIZE = 1_000_000  # do not download webpages larges than 1MB
+DOWNLOAD_MAXSIZE = 2**20  # do not download webpages larges than 1MB
+DOWNLOAD_TIMEOUT = 10
+
+CLOSESPIDER_TIMEOUT = 60 * 10
