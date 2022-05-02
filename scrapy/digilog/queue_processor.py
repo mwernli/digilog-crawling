@@ -5,7 +5,7 @@ from time import sleep
 
 from digilog.DataSource import DataSourceContext, QueueEntry
 
-FORMAT = '%(asctime)s [QueueProcessor] %(levelname)s: %(message)s'
+FORMAT = '%(asctime)s [QueueProcessor] [main] %(levelname)s: %(message)s'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 logging.basicConfig(format=FORMAT, datefmt=DATE_FORMAT)
 logger = logging.getLogger(__name__)
