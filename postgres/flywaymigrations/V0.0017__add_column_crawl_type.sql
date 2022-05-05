@@ -1,5 +1,5 @@
 ALTER TABLE crawl
-ADD crawl_type varchar NOT NULL;
+ADD COLUMN IF NOT EXISTS crawl_type varchar NOT NULL DEFAULT '';
 
 ALTER TABLE crawling_queue
-ADD crawl_type varchar NOT NULL;
+ADD COLUMN IF NOT EXISTS crawl_type varchar NOT NULL DEFAULT '';

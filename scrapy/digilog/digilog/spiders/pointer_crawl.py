@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 
 from spaczz.matcher import FuzzyMatcher
 import spacy
+import datetime
 # from progressbar import progressbar
 
 
@@ -69,6 +70,7 @@ class PointerCrawlSpider(scrapy.Spider):
     
     def save_stats(self):
         nested_stats = stats_to_nested_dict(self.crawler.stats.get_stats())
+        nested_stats['stop_time'] = datetime.datetime.now()
         stats_id = self.ds.mongodb.insert_crawl_stats(nested_stats, self.crawl_id, None)
         self.ds.postgres.insert_crawl_stats_connection(self.crawl_id, str(stats_id))
 

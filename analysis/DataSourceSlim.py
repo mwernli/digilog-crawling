@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 import psycopg2
 from pprint import pprint
+import os
 
 
 class MongoDbConnection:
@@ -8,10 +9,16 @@ class MongoDbConnection:
         self.mongo()
 
     def mongo(self):
-        self.host = 'localhost'
-        # self.host = 'digilog-mongodb'
-        self.port = 5550
-        # self.port = 27017
+        try:
+            if os.environ['OUTSIDE_NETWORK'] == '1':
+                self.host = 'localhost'
+                self.port = 5550
+            else:
+                self.host = 'digilog-mongodb'
+                self.port = 27017
+        except :
+            self.host = 'digilog-mongodb'
+            self.port = 27017
         self.user = 'root'
         self.password = 'mongopwd'
         connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
@@ -36,10 +43,19 @@ class PostresDbConnection:
         self.postgres()
 
     def postgres(self):
-        self.host = 'localhost'
-        self.port = '5500'
-        # self.host = 'digilog-postgres'
-        # self.port = 5432
+        try:
+            if os.environ['OUTSIDE_NETWORK'] == '1':
+                self.host = 'localhost'
+                self.port = '5500'
+            else:
+                self.host = 'digilog-postgres'
+                # self.host = 'database'
+                self.port = 5432
+        except psycopg2.OperationalError:
+            self.host = 'digilog-postgres'
+            # self.host = 'database'
+            self.port = 5432
+
         self.user = 'digilog'
         self.password = 'password'
         self.db = 'digilog'
