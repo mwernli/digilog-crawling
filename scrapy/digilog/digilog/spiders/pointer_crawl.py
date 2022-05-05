@@ -1,14 +1,15 @@
-import spacy
+import scrapy
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
-from spaczz.matcher import FuzzyMatcher
 from urllib3.util import parse_url
 from typing import List
 
-import scrapy
 from ..DataSource import DataSource
 from ..items import RawItem
+from bs4 import BeautifulSoup
 
-
+from spaczz.matcher import FuzzyMatcher
+import spacy
+import datetime
 # from progressbar import progressbar
 
 
@@ -37,6 +38,8 @@ class PointerCrawlSpider(scrapy.Spider):
 
     def parse(self, response):
         html = response.text
+        soup = BeautifulSoup(html, 'html.parser')
+        raw_text = soup.get_text()
         url = response.request.url
         depth = response.request.meta['depth']
 
@@ -44,7 +47,7 @@ class PointerCrawlSpider(scrapy.Spider):
         # if response.meta['depth'] <= 2:
         if response.meta['depth'] <= 2:
             links = self.link_extractor.extract_links(response)
-            yield RawItem(html=html, url=url, links=links, depth=depth)
+            yield RawItem(html=html, raw_text=raw_text, url=url, links=links, depth=depth)
 
             # for link in links:
             #     yield response.follow(link, self.parse)
@@ -52,7 +55,7 @@ class PointerCrawlSpider(scrapy.Spider):
             matches = self.matcher(self.nlp(' '.join(url.split('/'))))
             links = self.link_extractor.extract_links(response)
             if len(matches) > 0:
-                yield RawItem(html=html, url=url, links=links, depth=depth)
+                yield RawItem(html=html, raw_text=raw_text, url=url, links=links, depth=depth)
             del matches
 
         for link in links:
@@ -67,6 +70,7 @@ class PointerCrawlSpider(scrapy.Spider):
     
     def save_stats(self):
         nested_stats = stats_to_nested_dict(self.crawler.stats.get_stats())
+        nested_stats['stop_time'] = datetime.datetime.now()
         stats_id = self.ds.mongodb.insert_crawl_stats(nested_stats, self.crawl_id, None)
         self.ds.postgres.insert_crawl_stats_connection(self.crawl_id, str(stats_id))
 
