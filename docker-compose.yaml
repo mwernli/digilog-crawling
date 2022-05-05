@@ -119,6 +119,9 @@ services:
       - 5000:5000
     volumes:
       - ./web/app/webapp:/home/digilog/webapp
+      - type: bind
+        source: ./web/gunicorn.conf.py
+        target: /etc/gunicorn.conf.py
     depends_on:
       - fluentd
     logging:

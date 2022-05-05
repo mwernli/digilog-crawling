@@ -9,7 +9,7 @@ WORKDIR /home/crawluser
 
 COPY requirements.txt .
 
-RUN pip install --upgrade pip && pip install --no-warn-script-location --user -r requirements.txt && python3 -m spacy download de_core_news_sm 
+RUN pip install --upgrade pip && pip install --no-warn-script-location --user -r requirements.txt && python3 -m spacy download de_core_news_sm
 
 WORKDIR /src
 

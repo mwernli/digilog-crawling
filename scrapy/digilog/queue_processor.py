@@ -5,9 +5,14 @@ from time import sleep
 
 from digilog.DataSource import DataSourceContext, QueueEntry
 
-FORMAT = '%(asctime)s [QueueProcessor] %(levelname)s: %(message)s'
+FORMAT = '%(asctime)s [QueueProcessor] [main] %(levelname)s: %(message)s'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(format=FORMAT, datefmt=DATE_FORMAT)
+logging.basicConfig(
+    format=FORMAT,
+    datefmt=DATE_FORMAT,
+    filename='/var/log/scrapy/processor.log',
+    filemode='a',
+)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
