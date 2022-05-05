@@ -7,6 +7,8 @@ WORKDIR /home/digilog
 ENV FLASK_APP wsgi.py
 
 COPY requirements.txt requirements.txt
+COPY gunicorn.conf.py /etc/config/gunicorn.conf.py
+
 RUN python -m venv venv && \
     venv/bin/pip install --upgrade pip && \
     venv/bin/pip install -r requirements.txt && \
