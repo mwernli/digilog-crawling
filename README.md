@@ -93,3 +93,10 @@ Each crawl will generate a unique record in the `crawl` table including its url 
 ### Spiders
 #### simple
 The `simple` spider stores the raw html and raw text (html tags removed with [BeautifulSoup](https://beautiful-soup-4.readthedocs.io/en/latest/)) of each crawled web page. Only URLs from the same domain as the domain of the input URL are considered. Duplicate URLs are ignored (scrapy default).
+
+####
+## Analysis
+### all
+The `analysis` image starts an analysis container which analysis all crawls which have not been analysed yet. Thus it checks the Postgres table `crawl_analysis`. In the column `crawl_id` all crawls executed so far ar shown. If the crawls have already been analyzed, the id of the MongoDB of the analysis collection is also stored. If the value is NULL, the analysis is still pending. The container analyzes all crawls which do not have a MongoDB Id. A container can be started by simply running `run_analysis.sh`. 
+### single crawl
+The `analysis_single` images allows to start an analysis on a specific crawl. Therefore a crawl id must be given when running the container. A container can be started when running the script `run_analysis_crawl.sh`. 
