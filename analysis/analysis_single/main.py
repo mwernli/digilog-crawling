@@ -2,23 +2,18 @@ import logging
 import os
 import re
 import sys
-from sqlalchemy import create_engine
-import pandas as pd
 import os
-from db_connection import get_gde_url
 import multiprocessing
 from multiprocessing import log_to_stderr, get_logger
 import datetime
-import numpy as np
 import subprocess
-sys.path.insert(1,'/home/gerj/Documents/GitHub/digilog-crawling/analysis/')
+sys.path.append('../analysis')
 from DataSourceSlim import DataSourceSlim
 
 logging.NOTSET = 1
 
 
 os.environ['OUTSIDE_NETWORK'] = '1'
-ds = DataSourceSlim()
 
 # os.chdir('/home/ubuntu/digilog/digilog-crawling/crontab')
 
@@ -47,10 +42,11 @@ def do_logging(secs):
     logger.info(str(secs))
     # print(str(secs))
     
-def run_crawling_simple(munic):
-    url, name = munic
+def run_analysis_crawl(crawl_id):
     # start = datetime.datetime.now()
-    subprocess.run(['sudo','sh', './simple_crawl.sh', '-i', url, ' >', '/dev/null'])
+    if crawl_id % 100 == 0:
+        print(f'{datetime.datetime.now()} --- crawl_id: {crawl_id}')
+    subprocess.run(['sudo','sh', './run_analysis_crawl.sh', str(crawl_id)])
     # duration_crawling = (datetime.datetime.now() - start).seconds
     # result = ds.mongo.db.crawlingtimes.insert_one({
     #     'url':url,
@@ -59,31 +55,26 @@ def run_crawling_simple(munic):
     #     'crawltype': 'simple'
     #     })
 
+def get_crawl_id_range():
+    postgres_result = ds.postgres.interact_postgres('SELECT crawl_id FROM crawl_analysis ORDER BY crawl_id DESC LIMIT 1;')
+    if len(postgres_result) == 0:
+        start_crawl_id = 1
+    else:
+        start_crawl_id = int(postgres_result[0][0])+1
+    end_crawl_id = ds.postgres.interact_postgres('SELECT id FROM crawl ORDER BY id DESC LIMIT 1;')[0][0]
 
+    return (start_crawl_id, end_crawl_id)
 
 if __name__ == '__main__':
-    df = get_gde_url()
-    urls = [tuple(line) for line in df.to_numpy()]
-    url_bools = [bool(re.match('http://', url)) or bool(re.match('https://', url)) for url, name in urls]
 
-    for i, line in enumerate(urls):
-        url, name = urls[i]
-        if url_bools[i]:
-            pass
-        else:
-            url = 'http://'+ url
-        urls[i] = (url, name)
-
-    urls = [(url, name) for url, name in urls if bool(re.search('wikipedia', url)) != True]
-    # urls = ['http://www.hittnau.ch']
-
-    os.chdir(os.path.join(os.getcwd(), '../scrapy'))
+    ds = DataSourceSlim()
+    os.chdir('./analysis_single')
+    start_crawl_id, end_crawl_id = get_crawl_id_range() #range of which crawls are analyzed
+    print(f'{datetime.datetime.now()} --- starting analysis from {start_crawl_id} to {end_crawl_id}')
+    crawl_ids = [ind[0] for ind in ds.postgres.interact_postgres(f'select id from crawl where id >= {start_crawl_id} and id <= {end_crawl_id}')]
     with multiprocessing.Pool(5) as pool:
-        for i in pool.imap_unordered(run_crawling_simple, urls):
+        for i in pool.imap_unordered(run_analysis_crawl, crawl_ids):
             pass
-            # print(i)
-    os.chdir(os.path.join(os.getcwd(), '../crontab'))
 
-    # logger.info('end process')
-
-    # do_logging(1)
+    os.chdir('../')
+    print(f'{datetime.datetime.now()} --- finishing analysis')

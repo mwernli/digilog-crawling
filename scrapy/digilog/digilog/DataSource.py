@@ -54,12 +54,20 @@ class DataSource:
 class PostgresConnection:
     def __init__(self, called_from_container:bool = True):
         if called_from_container:
-            self.host = get_env_str('POSTGRES_SERVICE_HOST')
-            self.port = get_env_int('POSTGRES_SERVICE_PORT')
-            self.user = get_env_str('POSTGRES_USER')
-            self.password = get_env_str('POSTGRES_PASSWORD')
-            self.db = get_env_str('POSTGRES_DB')
-            self.schema = get_env_str('POSTGRES_DB')
+            self.host = 'digilog-postgres'
+            self.port = 5432
+            self.user = 'digilog'
+            self.password = 'password'
+            self.db = 'digilog'
+            self.schema = 'digilog'
+
+            # TODO: debug not set env variable 
+            # self.host = get_env_str('POSTGRES_SERVICE_HOST')
+            # self.port = get_env_int('POSTGRES_SERVICE_PORT')
+            # self.user = get_env_str('POSTGRES_USER')
+            # self.password = get_env_str('POSTGRES_PASSWORD')
+            # self.db = get_env_str('POSTGRES_DB')
+            # self.schema = get_env_str('POSTGRES_DB')
         else:
             self.host = 'localhost'
             self.port = 5500
@@ -222,6 +230,7 @@ class PostgresConnection:
                     (crawl_id, stats_id)
                 )
 
+
     def close(self):
         self.connection.close()
 
@@ -229,10 +238,16 @@ class PostgresConnection:
 class MongoDbConnection:
     def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = get_env_str('MONGODB_SERVICE_HOST')
-            self.port = get_env_int('MONGODB_SERVICE_PORT')
-            self.user = get_env_str('MONGODB_USER')
-            self.password = get_env_str('MONGODB_PASSWORD')
+            self.host = 'digilog-mongodb'
+            self.port = 27017
+            self.user = 'root'
+            self.password = 'mongopwd'
+
+            # TODO debug not set env variable 
+            # self.host = get_env_str('MONGODB_SERVICE_HOST')
+            # self.port = get_env_int('MONGODB_SERVICE_PORT')
+            # self.user = get_env_str('MONGODB_USER')
+            # self.password = get_env_str('MONGODB_PASSWORD')
         else:
             self.host = 'localhost'
             self.port = 5550

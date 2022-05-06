@@ -1,3 +1,4 @@
+#single analyze
 import re
 import spacy
 from spacy.util import filter_spans
@@ -10,59 +11,68 @@ import os
 from progressbar import progressbar
 from bs4 import BeautifulSoup
 import numpy as np
-
+import sys
+import datetime
 
 nlp = spacy.load('de_core_news_sm')
 NLP_MAX_LENGTH = 2*10**6 
 nlp.max_length = NLP_MAX_LENGTH
-if not 'OUTSIDE_NETWORK' in list(os.environ.keys()):
-    os.environ['OUTSIDE_NETWORK'] = '1'
 
 ds = DataSourceSlim()
-if not 'keywords' in ds.mongo.db.list_collection_names():
-    KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung']
-    doc = {
-        'keywordlist' : KEYWORDLIST
-    }
-    ds.mongo.db.keywords.insert_one(doc)
-else:
-    mongo_keywords = ds.mongo.db.keywords.find({})
-    KEYWORDLIST = [item for item in mongo_keywords][0]['keywordlist']
 
 
-# Logger
-dir_path = os.path.dirname(os.path.realpath(__file__))
-logfilename = os.path.join(dir_path, 'crawl_analysis.log')
+def get_keywords(language='de'):
+	if not 'keywords' in ds.mongo.db.list_collection_names():
+	    KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung']
+	    doc = {
+	        'keywordlist' : KEYWORDLIST
+	    }
+	    ds.mongo.db.keywords.insert_one(doc)
+	else:
+	    mongo_keywords = ds.mongo.db.keywords.find({})
+	    KEYWORDLIST = [item for item in mongo_keywords][0]['keywordlist']
+	return KEYWORDLIST
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+def parse_crawl_id(args):
+    # print(args)
+    if len(args) == 0:
+        postgres_result = ds.postgres.interact_postgres('SELECT crawl_id FROM crawl_analysis ORDER BY crawl_id DESC LIMIT 1;')
+        if len(postgres_result) == 0:
+            crawl_id = 1
+        else:
+            crawl_id = int(postgres_result[0][0])+1
+    else:
+        crawl_id = int(args[0])
+    return crawl_id
 
-file_handler = logging.FileHandler(logfilename)
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-logger.addHandler(file_handler)
+def get_pipeline():
+    nlp = spacy.load('de_core_news_sm')
+    NLP_MAX_LENGTH = 2*10**6 
+    nlp.max_length = NLP_MAX_LENGTH
+    return nlp
 
+if __name__ == '__main__':
+    KEYWORDLIST = get_keywords()
+    nlp = get_pipeline()
+	# Logger
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    logfilename = os.path.join(dir_path, 'crawl_analysis.log')
 
-# if 'simpleanalysis' in ds.mongo.db.list_collection_names():
-#     cursor = ds.mongo.db.simpleanalysis.find().sort([('_id', -1)]).limit(1)
-#     start_crawl_id = [item for item in cursor][0]['crawl_id']
-# else:
-#     start_crawl_id = 1
-postgres_result = ds.postgres.interact_postgres('SELECT crawl_id FROM crawl_analysis ORDER BY crawl_id DESC LIMIT 1;')
-if len(postgres_result) == 0:
-    start_crawl_id = 1
-else:
-    start_crawl_id = int(postgres_result[0][0])+1
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
 
+    file_handler = logging.FileHandler(logfilename)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logger.addHandler(file_handler)
 
-end_crawl_id = ds.postgres.interact_postgres('SELECT id FROM crawl ORDER BY id DESC LIMIT 1;')[0][0]
+    crawl_id = parse_crawl_id(sys.argv[1:])
+    if crawl_id % 100 == 0:
+        print(f'{datetime.datetime.now()} --- analyzing crawl id: {crawl_id}')
 
-# start_crawl_id, end_crawl_id = 60,70
+    logger.info(f'analyzing crawl{crawl_id}')
+    # print(f'analyzing crawl{crawl_id}')
 
-logger.info(f'analyzing crawls from id{start_crawl_id} to {end_crawl_id}')
-print(f'analyzing crawls from crawl_id {start_crawl_id} to {end_crawl_id}')
-
-for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):    
     if nlp.max_length != NLP_MAX_LENGTH:
         nlp.max_length =  NLP_MAX_LENGTH
         logger.info(f'resetting nlp max_length from {nlp.max_length}to {NLP_MAX_LENGTH}')
@@ -71,9 +81,8 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
         SELECT loc_gov_ch.id, loc_gov_ch.url, loc_gov_ch.gdename
         FROM loc_gov_ch 
         LEFT JOIN crawl ON loc_gov_ch.url = crawl.top_url 
-        WHERE crawl.id = {crawl_id}'''
-        )
-    
+        WHERE crawl.id = {crawl_id}''')
+        
     if len(postgres_result) == 0:
         url = ds.postgres.interact_postgres(f'SELECT (crawl.top_url) FROM crawl WHERE id = {crawl_id}')[0][0].split("//")[-1]
         gov_urls = ds.postgres.interact_postgres(f'SELECT id, url FROM loc_gov_ch')
@@ -87,6 +96,7 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
 
     try:
         loc_gov_id, loc_gov_url, loc_gov_nam = postgres_result[0]
+        loc_gov_id = int(loc_gov_id)
         # postgres_result = re.split(',',postgres_result[0][0].replace('(','').replace(')',''))
     except:
         # print(f'ERROR in analysis crawl id {crawl_id}, continue')
@@ -94,14 +104,14 @@ for crawl_id in progressbar(range(start_crawl_id, end_crawl_id + 1)):
     result = ds.mongo.db.simpleresults.find({'crawl_id': crawl_id})
     obj = [item for item in result]
     len_array = np.array([len(item['html']) for item in obj])
-    
+
     if len(len_array) == 0:
-        continue
+        sys.exit()
 
     max_length = np.quantile(len_array, 0.99)
 
     analysis_doc = {}
-    analysis_doc['loc_gov_id'] = int(loc_gov_id)
+    analysis_doc['loc_gov_id'] = loc_gov_id
     analysis_doc['name'] = loc_gov_nam
     analysis_doc['url'] = loc_gov_url
     analysis_doc['links_n'] = len(obj)
