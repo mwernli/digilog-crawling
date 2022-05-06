@@ -222,6 +222,18 @@ class PostgresConnection:
                     (crawl_id, stats_id)
                 )
 
+
+    def insert_crawl_analysis_connection(self, crawl_id: int, url: str):
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO crawl_stats (crawl_id)
+                    VALUES (%s)
+                    ON CONFLICT (crawl_id) DO NOTHING;
+                    """
+                )
+
     def close(self):
         self.connection.close()
 
