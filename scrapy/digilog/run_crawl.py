@@ -1,6 +1,7 @@
 import argparse
 import logging
 import sys
+import os, os.path
 
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
@@ -65,7 +66,13 @@ def configure_logging(settings, log_format=None):
     if log_format is None:
         log_format = settings.get('LOG_FORMAT')
     log_level = settings.get('LOG_LEVEL')
-    handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
+    try:
+        # handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
+        handler = logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
+    except FileNotFoundError:
+        os.makedirs('/tmp/log/scrapy/', mode=0o777)
+        # handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
+        handler = logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
     handler.setFormatter(NewlineRemovingFormatter(log_format, settings.get('LOG_DATEFORMAT')))
     handler.setLevel(log_level)
     logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
