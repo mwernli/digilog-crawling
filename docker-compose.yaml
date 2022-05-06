@@ -7,6 +7,8 @@ services:
     ports:
       - 5500:5432
     environment:
+      POSTGRES_SERVICE_HOST: digilog-postgres
+      POSTGRES_SERVICE_PORT: 5432
       POSTGRES_PASSWORD: password
       POSTGRES_USER: digilog
       POSTGRES_DB: digilog

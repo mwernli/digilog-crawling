@@ -179,7 +179,7 @@ if __name__ == '__main__':
         
     result = ds.mongo.db.simpleanalysis.insert_one(analysis_doc)
     cursor = ds.postgres.connection.cursor()
-    cursor.execute('INSERT INTO crawl_analysis (crawl_id, mongo_analysis_id, loc_gov_id) VALUES (%s, %s, %s) RETURNING id;', (crawl_id, str(result.inserted_id), analysis_doc["loc_gov_id"]))
+    cursor.execute('INSERT INTO crawl_analysis (crawl_id, mongo_analysis_id, log_gov_id) VALUES (%s, %s, %s) RETURNING id;', (crawl_id, str(result.inserted_id), analysis_doc["loc_gov_id"]))
     analysis_id = cursor.fetchone()[0]
     ds.postgres.connection.commit()
     cursor.close()
