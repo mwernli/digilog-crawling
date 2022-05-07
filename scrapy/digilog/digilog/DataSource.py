@@ -39,7 +39,7 @@ def get_env_str(name: str) -> str:
 
 def get_env_str_or(name: str, default: str) -> str:
     try:
-        get_env_str(name)
+        return get_env_str(name)
     except ValueError:
         return default
 
