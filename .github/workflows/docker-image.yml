@@ -19,12 +19,22 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    - name: "scrapy: tags"
+      id: scrapy-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-scrapy
+        tags: |
+          type=ref,event=branch
+          type=sha
     - name: "scrapy: Build and push"
       uses: docker/build-push-action@v2
       with:
         context: ./scrapy/.
-        push: true
-        tags: trephor/digilog-scrapy
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.scrapy-meta.outputs.tags }}
+        labels: ${{ steps.scrapy-meta.outputs.labels }}
     - name: "web: Build and push"
       uses: docker/build-push-action@v2
       with:
