@@ -37,8 +37,19 @@ def get_env_str(name: str) -> str:
         raise ValueError(f'Environment variable "{name}" is not set')
 
 
+def get_env_str_or(name: str, default: str) -> str:
+    try:
+        get_env_str(name)
+    except ValueError:
+        return default
+
+
 def get_env_int(name: str) -> int:
     return int(get_env_str(name))
+
+
+def get_env_int_or(name: str, default: int) -> int:
+    return int(get_env_str_or(name, default))
 
 
 class DataSource:
@@ -52,22 +63,14 @@ class DataSource:
 
 
 class PostgresConnection:
-    def __init__(self, called_from_container:bool = True):
+    def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = 'digilog-postgres'
-            self.port = 5432
-            self.user = 'digilog'
-            self.password = 'password'
-            self.db = 'digilog'
-            self.schema = 'digilog'
-
-            # TODO: debug not set env variable 
-            # self.host = get_env_str('POSTGRES_SERVICE_HOST')
-            # self.port = get_env_int('POSTGRES_SERVICE_PORT')
-            # self.user = get_env_str('POSTGRES_USER')
-            # self.password = get_env_str('POSTGRES_PASSWORD')
-            # self.db = get_env_str('POSTGRES_DB')
-            # self.schema = get_env_str('POSTGRES_DB')
+            self.host = get_env_str_or('POSTGRES_SERVICE_HOST', 'digilog-postgres')
+            self.port = get_env_int_or('POSTGRES_SERVICE_PORT', 5432)
+            self.user = get_env_str_or('POSTGRES_USER', 'digilog')
+            self.password = get_env_str_or('POSTGRES_PASSWORD', 'password')
+            self.db = get_env_str_or('POSTGRES_DB', 'digilog')
+            self.schema = get_env_str_or('POSTGRES_DB', 'digilog')
         else:
             self.host = 'localhost'
             self.port = 5500
@@ -238,16 +241,10 @@ class PostgresConnection:
 class MongoDbConnection:
     def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = 'digilog-mongodb'
-            self.port = 27017
-            self.user = 'root'
-            self.password = 'mongopwd'
-
-            # TODO debug not set env variable 
-            # self.host = get_env_str('MONGODB_SERVICE_HOST')
-            # self.port = get_env_int('MONGODB_SERVICE_PORT')
-            # self.user = get_env_str('MONGODB_USER')
-            # self.password = get_env_str('MONGODB_PASSWORD')
+            self.host = get_env_str_or('MONGODB_SERVICE_HOST', 'digilog-mongodb')
+            self.port = get_env_int_or('MONGODB_SERVICE_PORT', 27017)
+            self.user = get_env_str_or('MONGODB_USER', 'root')
+            self.password = get_env_str_or('MONGODB_PASSWORD', 'mongopwd')
         else:
             self.host = 'localhost'
             self.port = 5550
