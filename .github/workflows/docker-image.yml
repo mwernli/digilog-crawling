@@ -35,15 +35,35 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.scrapy-meta.outputs.tags }}
         labels: ${{ steps.scrapy-meta.outputs.labels }}
+    - name: "web: tags"
+      id: web-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-web
+        tags: |
+          type=ref,event=branch
+          type=sha
     - name: "web: Build and push"
       uses: docker/build-push-action@v2
       with:
         context: ./web/.
-        push: true
-        tags: trephor/digilog-web
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.web-meta.outputs.tags }}
+        labels: ${{ steps.web-meta.outputs.labels }}
+    - name: "flyway: tags"
+      id: flyway-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-flyway
+        tags: |
+          type=ref,event=branch
+          type=sha
     - name: "flyway: Build and push"
       uses: docker/build-push-action@v2
       with:
         context: ./flyway/.
-        push: true
-        tags: trephor/digilog-flyway
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.flyway-meta.outputs.tags }}
+        labels: ${{ steps.flyway-meta.outputs.labels }}
