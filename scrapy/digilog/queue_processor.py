@@ -37,7 +37,10 @@ class RunOptions:
 
 
 def process_entry(entry: QueueEntry):
-    run(['python', 'run_crawl.py', 'queued', str(entry.id), '-s', 'DEPTH_LIMIT=2'])
+    settings = [f'{k}={v}' for k, v in entry.settings.items()]
+    if len(settings) > 0:
+        settings = ['-s'] + settings
+    run(['python', 'run_crawl.py', 'queued', str(entry.id)] + settings)
 
 
 def process_queue():

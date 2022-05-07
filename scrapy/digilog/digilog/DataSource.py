@@ -21,6 +21,7 @@ def condense(s: str) -> str:
 class QueueEntry:
     id: int
     url: str
+    settings: dict
 
 
 class QueueStatus(Enum):
@@ -188,27 +189,27 @@ class PostgresConnection:
                         ORDER BY priority
                         LIMIT 1
                         FOR UPDATE SKIP LOCKED
-                    ) RETURNING id, top_url;
+                    ) RETURNING id, top_url, scrapy_settings;
                     """,
                 )
                 result = cursor.fetchone()
                 if not result:
                     return None
-                return QueueEntry(result[0], result[1])
+                return QueueEntry(result[0], result[1], result[2])
 
     def get_queue_entry_by_id(self, id: int) -> QueueEntry:
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, top_url
+                    SELECT id, top_url, scrapy_settings
                     FROM crawling_queue
                     WHERE id = %s
                     """,
                     (id,)
                 )
                 result = cursor.fetchone()
-                return QueueEntry(result[0], result[1])
+                return QueueEntry(result[0], result[1], result[2])
 
     def update_queue_status(self, id: int, status: QueueStatus, reason: str = ''):
         with self.connection as connection:
