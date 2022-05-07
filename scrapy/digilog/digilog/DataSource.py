@@ -49,7 +49,7 @@ def get_env_int(name: str) -> int:
 
 
 def get_env_int_or(name: str, default: int) -> int:
-    return int(get_env_str_or(name, default))
+    return int(get_env_str_or(name, str(default)))
 
 
 class DataSource:
