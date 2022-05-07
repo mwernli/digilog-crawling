@@ -1,7 +1,8 @@
 import argparse
 import logging
+import os
+import os.path
 import sys
-import os, os.path
 
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
@@ -62,17 +63,30 @@ def merge_settings_with_args(settings_args):
     return settings
 
 
+def get_logging_target():
+    try:
+        return os.environ['CRAWL_LOGGING_TARGET']
+    except KeyError:
+        return 'STDOUT'
+
+
+def get_handler():
+    try:
+        target = get_logging_target()
+        if target == 'STDOUT':
+            return logging.StreamHandler()
+        os.makedirs(target)
+        return logging.FileHandler(filename=target, mode='a')
+    except FileNotFoundError:
+        os.makedirs('/tmp/log/scrapy/', mode=0o777)
+        return logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
+
+
 def configure_logging(settings, log_format=None):
     if log_format is None:
         log_format = settings.get('LOG_FORMAT')
     log_level = settings.get('LOG_LEVEL')
-    try:
-        # handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
-        handler = logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
-    except FileNotFoundError:
-        os.makedirs('/tmp/log/scrapy/', mode=0o777)
-        # handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
-        handler = logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
+    handler = get_handler()
     handler.setFormatter(NewlineRemovingFormatter(log_format, settings.get('LOG_DATEFORMAT')))
     handler.setLevel(log_level)
     logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
