@@ -3,7 +3,7 @@ from typing import Iterable
 
 from .model import CrawlDetail, CrawlStatus
 from ..common.model import DataSource
-from ..repository import placerepository, crawlqueuerepository
+from ..repository import placerepository, crawlqueuerepository, settingsrepository
 from ..repository.crawlqueuerepository import load_crawl_queue_entry_by_crawl_id
 from ..repository.crawlrepository import load_crawls, load_crawl_by_id, load_basic_crawl_stats_by_crawl_id
 from ..repository.model import CrawlEntity, CountryEntity, StateEntity, MunicipalityEntity, \
@@ -80,7 +80,8 @@ def update_municipality(ds: DataSource, municipality_id: int, url: str) -> Munic
 
 def enqueue_municipality_crawl(ds: DataSource, municipality_id: int) -> MunicipalityEntity:
     municipality = get_municipality_by_id(ds, municipality_id)
-    queue_entry = crawlqueuerepository.enqueue_crawl(ds, municipality.url, 0)
+    settings = settingsrepository.get_default_settings(ds, 'DEBUG_DEFAULT')
+    queue_entry = crawlqueuerepository.enqueue_crawl(ds, municipality.url, 0, 'queued', settings)
     placerepository.add_municipality_queue_connection(ds, municipality_id, queue_entry.id)
     return municipality
 
