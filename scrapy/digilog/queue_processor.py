@@ -1,4 +1,5 @@
 import logging
+import os
 from dataclasses import dataclass
 from subprocess import run
 from time import sleep
@@ -7,12 +8,23 @@ from digilog.DataSource import DataSourceContext, QueueEntry
 
 FORMAT = '%(asctime)s [QueueProcessor] [main] %(levelname)s: %(message)s'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(
-    format=FORMAT,
-    datefmt=DATE_FORMAT,
-    filename='/var/log/scrapy/processor.log',
-    filemode='a',
-)
+logging_target = 'STDOUT'
+try:
+    logging_target = os.environ['QUEUE_PROCESSOR_LOGGING_TARGET']
+except KeyError:
+    pass
+if logging_target != 'STDOUT':
+    logging.basicConfig(
+        format=FORMAT,
+        datefmt=DATE_FORMAT,
+        filename=logging_target,
+        filemode='a',
+    )
+else:
+    logging.basicConfig(
+        format=FORMAT,
+        datefmt=DATE_FORMAT,
+    )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
