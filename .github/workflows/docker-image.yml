@@ -3,6 +3,8 @@ name: Docker Image CI
 on:
   push:
     branches: [ main ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ main ]
 
@@ -28,6 +30,8 @@ jobs:
         tags: |
           type=ref,event=branch
           type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
     - name: "scrapy: Build and push"
       uses: docker/build-push-action@v2
       with:
@@ -44,6 +48,8 @@ jobs:
         tags: |
           type=ref,event=branch
           type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
     - name: "web: Build and push"
       uses: docker/build-push-action@v2
       with:
@@ -60,6 +66,8 @@ jobs:
         tags: |
           type=ref,event=branch
           type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
     - name: "flyway: Build and push"
       uses: docker/build-push-action@v2
       with:
@@ -67,3 +75,21 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.flyway-meta.outputs.tags }}
         labels: ${{ steps.flyway-meta.outputs.labels }}
+    - name: "scheduler: tags"
+      id: scheduler-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-scheduler
+        tags: |
+          type=ref,event=branch
+          type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+    - name: "scheduler: Build and push"
+      uses: docker/build-push-action@v2
+      with:
+        context: ./scheduler/.
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.scheduler-meta.outputs.tags }}
+        labels: ${{ steps.scheduler-meta.outputs.labels }}
