@@ -1,0 +1,27 @@
+INSERT INTO default_scrapy_settings (key, settings)
+VALUES ('DEBUG_CALIBRATE', '{
+  "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+  "DEPTH_LIMIT": 2,
+  "DOWNLOAD_DELAY": 0.1,
+  "DOWNLOAD_MAXSIZE": 1048576,
+  "DOWNLOAD_TIMEOUT": 10,
+  "AUTOTHROTTLE_DEBUG": true,
+  "CLOSESPIDER_TIMEOUT": 30,
+  "AUTOTHROTTLE_ENABLED": true,
+  "AUTOTHROTTLE_MAX_DELAY": 30,
+  "AUTOTHROTTLE_START_DELAY": 0.5,
+  "AUTOTHROTTLE_TARGET_CONCURRENCY": 8
+}'),
+       ('CALIBRATE', '{
+         "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36",
+         "DEPTH_LIMIT": 2,
+         "DOWNLOAD_DELAY": 0.1,
+         "DOWNLOAD_MAXSIZE": 1048576,
+         "DOWNLOAD_TIMEOUT": 10,
+         "AUTOTHROTTLE_DEBUG": false,
+         "CLOSESPIDER_TIMEOUT": 30,
+         "AUTOTHROTTLE_ENABLED": true,
+         "AUTOTHROTTLE_MAX_DELAY": 30,
+         "AUTOTHROTTLE_START_DELAY": 0.5,
+         "AUTOTHROTTLE_TARGET_CONCURRENCY": 8
+       }');
