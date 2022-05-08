@@ -5,99 +5,87 @@
 
 from scrapy import signals
 
-# useful for handling different item types with a single interface
-from itemadapter import is_item, ItemAdapter
+from scrapy.downloadermiddlewares.retry import RetryMiddleware
+from scrapy.exceptions import IgnoreRequest
+from scrapy.spidermiddlewares.offsite import OffsiteMiddleware
+from scrapy.utils.response import response_status_message
+from twisted.internet import defer, reactor
 
 
-class DigilogSpiderMiddleware:
-    # Not all methods need to be defined. If a method is not defined,
-    # scrapy acts as if the spider middleware does not modify the
-    # passed objects.
+async def async_sleep(delay, return_value=None):
+    deferred = defer.Deferred()
+    reactor.callLater(delay, deferred.callback, return_value)
+    return await deferred
+
+
+class TooManyRequestsRetryMiddleware(RetryMiddleware):
+    """
+    https://stackoverflow.com/a/66131114
+    Modifies RetryMiddleware to delay retries on status 429.
+    """
+
+    DEFAULT_DELAY = 60
+    MAX_DELAY = 600
+
+    async def process_response(self, request, response, spider):
+        """
+        Like RetryMiddleware.process_response, but, if response status is 429,
+        retry the request only after waiting at most self.MAX_DELAY seconds.
+        Respect the Retry-After header if it's less than self.MAX_DELAY.
+        If Retry-After is absent/invalid, wait only self.DEFAULT_DELAY seconds.
+        """
+
+        if request.meta.get('dont_retry', False):
+            return response
+
+        if response.status in self.retry_http_codes:
+            if response.status == 429:
+                retry_after = response.headers.get('retry-after')
+                try:
+                    retry_after = int(retry_after)
+                except (ValueError, TypeError):
+                    delay = self.DEFAULT_DELAY
+                else:
+                    delay = min(self.MAX_DELAY, retry_after)
+                spider.logger.warning(f'Retrying {request} in {delay} seconds.')
+
+                spider.crawler.engine.pause()
+                await async_sleep(delay)
+                spider.crawler.engine.unpause()
+
+            reason = response_status_message(response.status)
+            return self._retry(request, reason, spider) or response
+
+        return response
+
+
+class StrictOffsiteMiddleware(object):
+    """
+    Ignore redirects to offsite domains.
+    See https://github.com/scrapy/scrapy/issues/2241 for details.
+    """
 
     @classmethod
     def from_crawler(cls, crawler):
-        # This method is used by Scrapy to create your spiders.
-        s = cls()
-        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
-        return s
-
-    def process_spider_input(self, response, spider):
-        # Called for each response that goes through the spider
-        # middleware and into the spider.
-
-        # Should return None or raise an exception.
-        return None
-
-    def process_spider_output(self, response, result, spider):
-        # Called with the results returned from the Spider, after
-        # it has processed the response.
-
-        # Must return an iterable of Request, or item objects.
-        for i in result:
-            yield i
-
-    def process_spider_exception(self, response, exception, spider):
-        # Called when a spider or process_spider_input() method
-        # (from other spider middleware) raises an exception.
-
-        # Should return either None or an iterable of Request or item objects.
-        pass
-
-    def process_start_requests(self, start_requests, spider):
-        # Called with the start requests of the spider, and works
-        # similarly to the process_spider_output() method, except
-        # that it doesn’t have a response associated.
-
-        # Must return only requests (not items).
-        for r in start_requests:
-            yield r
-
-    def spider_opened(self, spider):
-        spider.logger.info('Spider opened: %s' % spider.name)
-
-
-class DigilogDownloaderMiddleware:
-    # Not all methods need to be defined. If a method is not defined,
-    # scrapy acts as if the downloader middleware does not modify the
-    # passed objects.
-
-    @classmethod
-    def from_crawler(cls, crawler):
-        # This method is used by Scrapy to create your spiders.
         s = cls()
         crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
         return s
 
     def process_request(self, request, spider):
-        # Called for each request that goes through the downloader
-        # middleware.
-
-        # Must either:
-        # - return None: continue processing this request
-        # - or return a Response object
-        # - or return a Request object
-        # - or raise IgnoreRequest: process_exception() methods of
-        #   installed downloader middleware will be called
+        filtered_requests = [x for x in self.strict_offsite(request, spider)]
+        if len(filtered_requests) == 0:
+            spider.logger.warning('Filtered offsite request by strict_offsite to %(request)s', {'request': request})
+            raise IgnoreRequest('Forbidden by strict_offsite middleware')
         return None
 
-    def process_response(self, request, response, spider):
-        # Called with the response returned from the downloader.
-
-        # Must either;
-        # - return a Response object
-        # - return a Request object
-        # - or raise IgnoreRequest
-        return response
-
-    def process_exception(self, request, exception, spider):
-        # Called when a download handler or a process_request()
-        # (from other downloader middleware) raises an exception.
-
-        # Must either:
-        # - return None: continue processing this exception
-        # - return a Response object: stops process_exception() chain
-        # - return a Request object: stops process_exception() chain
-        pass
+    def strict_offsite(self, request, spider):
+        # here we have only 1 request and we fabricate a "result" array,
+        # so we can reuse OffsiteMiddleware here.
+        # returns 1 request if not filtered and 0 requests if filtered
+        result = [request]
+        return self.offsiteMiddleware.process_spider_output('unused_response_arg', result, spider)
 
     def spider_opened(self, spider):
         spider.logger.info('Spider opened: %s' % spider.name)
+        self.offsiteMiddleware = OffsiteMiddleware(spider.crawler.stats)
+        self.offsiteMiddleware.spider_opened(spider)
