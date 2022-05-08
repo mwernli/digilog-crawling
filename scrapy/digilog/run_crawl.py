@@ -22,6 +22,7 @@ def parse_args(args):
     subparsers = parser.add_subparsers(help='running modes')
     add_simple_spider_parser(subparsers)
     add_queued_parser(subparsers)
+    add_calibration_parser(subparsers)
     add_pointer_parser(subparsers)
     arguments = parser.parse_args(args)
     return arguments
@@ -38,6 +39,14 @@ def add_simple_spider_parser(subparsers):
 def add_queued_parser(subparsers):
     queued_parser = subparsers.add_parser('queued', help='process a queue entry')
     queued_parser.set_defaults(func=run_queued)
+    queued_parser.add_argument('id', type=int, help='The ID of the queue entry to process')
+    add_settings_parser(queued_parser)
+    return queued_parser
+
+
+def add_calibration_parser(subparsers):
+    queued_parser = subparsers.add_parser('calibration', help='perform a calibration run')
+    queued_parser.set_defaults(func=run_calibration)
     queued_parser.add_argument('id', type=int, help='The ID of the queue entry to process')
     add_settings_parser(queued_parser)
     return queued_parser
@@ -114,6 +123,21 @@ def run_queued(args):
 
     process.crawl('queued', queue_id=args.id)
     process.start()  # the script will block here until the crawling is finished
+
+
+def run_calibration(args):
+    settings = merge_settings_with_args(args.settings)
+
+    configured_log_format = str(settings.get('LOG_FORMAT'))
+    queued_log_format = configured_log_format.replace(
+        '%(asctime)s', '%(asctime)s [calibration-queue-entry-{}]'.format(args.id)
+    )
+    configure_logging(settings, queued_log_format)
+
+    process = CrawlerProcess(settings=settings, install_root_handler=False)
+
+    process.crawl('calibration', queue_id=args.id)
+    process.start()
 
 
 def run_pointer(args):

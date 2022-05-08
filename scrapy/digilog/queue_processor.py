@@ -1,6 +1,5 @@
 import logging
 import os
-from dataclasses import dataclass
 from subprocess import run
 from time import sleep
 
@@ -29,18 +28,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-@dataclass(frozen=True)
-class RunOptions:
-    parallel_count: int
-    delay_when_empty_seconds: int
-    loading_chunk_size: int
-
-
 def process_entry(entry: QueueEntry):
     settings = [f'{k}={v}' for k, v in entry.settings.items()]
     if len(settings) > 0:
         settings = ['-s'] + settings
-    run(['python', 'run_crawl.py', 'queued', str(entry.id)] + settings)
+    run(['python', 'run_crawl.py', entry.crawl_type, str(entry.id)] + settings)
 
 
 def process_queue():
