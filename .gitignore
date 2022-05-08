@@ -133,6 +133,6 @@ dmypy.json
 .pyre/
 
 .idea/
-
-# Sublime text
-.sublime-workspace
+**/.idea
+# sublime text
+digilog.sublime-workspace
