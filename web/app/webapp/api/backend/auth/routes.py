@@ -1,11 +1,12 @@
 from flask import render_template, redirect, url_for, flash, request
-from werkzeug.urls import url_parse
-from flask_login import login_user, logout_user, current_user
 from flask_babel import _
+from flask_login import login_user, logout_user, current_user
+from werkzeug.urls import url_parse
+
 from . import bp
+from .email import send_password_reset_email
 from .forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 from .service import register_user, verify_password_reset_token, change_password
-from .email import send_password_reset_email
 from ..core.common.model import FlashType
 from ..core.repository.userrepository import get_user_by_username, get_user_by_email
 from ..servicecaller import call
@@ -37,7 +38,7 @@ def logout():
 
 @bp.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
+    if not current_user.is_authenticated:
         return redirect(url_for('main.index'))
     form = RegistrationForm()
     if form.validate_on_submit():
