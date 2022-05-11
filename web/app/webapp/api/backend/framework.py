@@ -19,12 +19,12 @@ def parse_int_or_default(s: Any, fallback: int) -> int:
         return result
 
 
-def get_env_str(name: str) -> str:
+def get_env_str_or(name: str, fallback: str) -> str:
     try:
         return os.environ[name]
     except KeyError:
-        raise ValueError(f'Environment variable "{name}" is not set')
+        return fallback
 
 
-def get_env_int(name: str) -> int:
-    return int(get_env_str(name))
+def get_env_int_or(name: str, fallback: int) -> int:
+    return int(get_env_str_or(name, str(fallback)))

@@ -5,7 +5,7 @@ import psycopg2
 from pymongo import MongoClient
 
 from .core.common.model import DataSource
-from .framework import get_env_str, get_env_int
+from .framework import get_env_str_or, get_env_int_or
 
 
 class DataConnection:
@@ -25,12 +25,12 @@ class DataConnection:
 class PostgresConnection:
     def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = get_env_str('POSTGRES_SERVICE_HOST')
-            self.port = get_env_int('POSTGRES_SERVICE_PORT')
-            self.user = get_env_str('POSTGRES_USER')
-            self.password = get_env_str('POSTGRES_PASSWORD')
-            self.db = get_env_str('POSTGRES_DB')
-            self.schema = get_env_str('POSTGRES_DB')
+            self.host = get_env_str_or('POSTGRES_SERVICE_HOST', 'localhost')
+            self.port = get_env_int_or('POSTGRES_SERVICE_PORT', 5500)
+            self.user = get_env_str_or('POSTGRES_USER', 'digilog')
+            self.password = get_env_str_or('POSTGRES_PASSWORD', 'password')
+            self.db = get_env_str_or('POSTGRES_DB', 'digilog')
+            self.schema = self.db
         else:
             self.host = 'localhost'
             self.port = 5500
@@ -63,10 +63,10 @@ class PostgresConnection:
 class MongoDbConnection:
     def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            self.host = get_env_str('MONGODB_SERVICE_HOST')
-            self.port = get_env_int('MONGODB_SERVICE_PORT')
-            self.user = get_env_str('MONGODB_USER')
-            self.password = get_env_str('MONGODB_PASSWORD')
+            self.host = get_env_str_or('MONGODB_SERVICE_HOST', 'localhost')
+            self.port = get_env_int_or('MONGODB_SERVICE_PORT', 27017)
+            self.user = get_env_str_or('MONGODB_USER', 'digilog')
+            self.password = get_env_str_or('MONGODB_PASSWORD', 'digilogDbPass')
         else:
             self.host = 'localhost'
             self.port = 5550
