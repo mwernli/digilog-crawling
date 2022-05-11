@@ -84,7 +84,6 @@ def get_handler():
         target = get_logging_target()
         if target == 'STDOUT':
             return logging.StreamHandler()
-        os.makedirs(target)
         return logging.FileHandler(filename=target, mode='a')
     except FileNotFoundError:
         os.makedirs('/tmp/log/scrapy/', mode=0o777)
