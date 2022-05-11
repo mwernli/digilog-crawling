@@ -12,6 +12,13 @@ def get_logging_target():
         return 'LOKI'
 
 
+def get_pod_name():
+    try:
+        return os.environ['POD_NAME']
+    except KeyError:
+        return 'LOCAL'
+
+
 def get_loki_handler():
     from logging_loki import LokiHandler, emitter
 
@@ -19,10 +26,9 @@ def get_loki_handler():
 
     loki_host = get_env_str_or('LOKI_SERVICE_HOST', 'localhost')
     loki_port = get_env_str_or('LOKI_SERVICE_PORT', '3100')
-
     return LokiHandler(
         url=f'http://{loki_host}:{loki_port}/loki/api/v1/push',
-        tags={'app': 'digilog-scheduler'},
+        tags={'component': 'scheduler', 'pod': get_pod_name()},
         version='1',
     )
 
