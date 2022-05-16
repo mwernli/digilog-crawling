@@ -207,7 +207,7 @@ class PostgresConnection:
 
 
 class MongoDbConnection:
-    def __init__(self, called_from_container: bool = False):
+    def __init__(self, called_from_container: bool = True):
         if called_from_container:
             self.host = get_env_str_or('MONGODB_SERVICE_HOST', 'digilog-mongodb')
             self.port = get_env_int_or('MONGODB_SERVICE_PORT', 27017)
