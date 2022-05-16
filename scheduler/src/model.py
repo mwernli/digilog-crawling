@@ -13,7 +13,7 @@ class Municipality:
 
     @staticmethod
     def from_named_tuple(r: namedtuple):
-        return Municipality(r.id, r.name_de, r.url, r.population, r.area)
+        return Municipality(r.id, r.name_de, r.url, r.population, r.area_sqm)
 
 
 @dataclass(eq=True, frozen=True)
