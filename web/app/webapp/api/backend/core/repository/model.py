@@ -117,8 +117,20 @@ class QueueCrawl:
     crawl_entity: Optional[CrawlEntity]
 
     @staticmethod
-    def from_record(record):
+    def from_named_record(record):
         return QueueCrawl(
-            CrawlQueueEntity.from_record(record[:9]),
-            CrawlEntity.from_record(record[9:]) if record[9] is not None else None,
+            CrawlQueueEntity(
+                record.q_id,
+                record.q_top_url,
+                QueueStatus[record.status],
+                record.priority,
+                record.q_inserted_at,
+                record.updated_at,
+                record.reason,
+            ),
+            CrawlEntity(
+                record.c_id,
+                record.c_top_url,
+                record.c_inserted_at,
+            ) if record.c_id is not None else None,
         )

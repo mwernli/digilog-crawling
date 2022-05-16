@@ -50,7 +50,18 @@ def load_queue_crawls_of_queue_ids(ds: DataSource, queue_ids: Iterable[int]) -> 
     with ds.postgres_cursor() as c:
         c.execute(
             """
-            SELECT q.*, c.* FROM crawling_queue AS q
+            SELECT
+            q.id AS q_id,
+            q.top_url AS q_top_url,
+            q.status,
+            q.priority,
+            q.inserted_at AS q_inserted_at,
+            q.updated_at,
+            q.reason,
+            c.id AS c_id,
+            c.inserted_at AS c_inserted_at,
+            c.top_url AS c_top_url
+            FROM crawling_queue AS q
             LEFT JOIN queue_crawl AS qc
             ON qc.queue_id = q.id
             LEFT JOIN crawl AS c
@@ -59,14 +70,25 @@ def load_queue_crawls_of_queue_ids(ds: DataSource, queue_ids: Iterable[int]) -> 
             """,
             (ids,)
         )
-        return map(QueueCrawl.from_record, c.fetchall())
+        return map(QueueCrawl.from_named_record, c.fetchall())
 
 
 def load_queue_crawls_with_limit(ds: DataSource, row_limit: int) -> Iterable[QueueCrawl]:
     with ds.postgres_cursor() as c:
         c.execute(
             """
-            SELECT q.*, c.* FROM crawling_queue AS q
+            SELECT
+            q.id AS q_id,
+            q.top_url AS q_top_url,
+            q.status,
+            q.priority,
+            q.inserted_at AS q_inserted_at,
+            q.updated_at,
+            q.reason,
+            c.id AS c_id,
+            c.inserted_at AS c_inserted_at,
+            c.top_url AS c_top_url
+            FROM crawling_queue AS q
             LEFT JOIN queue_crawl AS qc
             ON qc.queue_id = q.id
             LEFT JOIN crawl AS c
@@ -75,4 +97,4 @@ def load_queue_crawls_with_limit(ds: DataSource, row_limit: int) -> Iterable[Que
             """,
             (row_limit,)
         )
-        return map(QueueCrawl.from_record, c.fetchall())
+        return map(QueueCrawl.from_named_record, c.fetchall())

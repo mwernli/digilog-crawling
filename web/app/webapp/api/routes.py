@@ -1,3 +1,4 @@
+from logging import getLogger
 from typing import Dict, Optional
 
 from flask import request, jsonify, abort
@@ -7,6 +8,8 @@ from . import bp
 from .backend.core.view import service
 from .backend.framework import parse_int_or_default
 from .backend.servicecaller import call
+
+logger = getLogger(__name__)
 
 
 def auth_guard():
@@ -24,7 +27,8 @@ def crawls():
 def crawl_details(crawl_id: int):
     try:
         return jsonify(call(lambda ds: service.get_crawl_detail(ds, crawl_id)))
-    except ValueError:
+    except ValueError as e:
+        logger.error(f'ValueError when calling crawl_details with id {crawl_id}: {e}')
         abort(404)
 
 
