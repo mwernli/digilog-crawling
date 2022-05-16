@@ -132,7 +132,7 @@ class PostgresConnection:
                     raise KeyError(f'Municipality "{m_id}" not found.')
                 return Municipality.from_named_tuple(result)
 
-    def schedule_municipality_calibration_runs(self, configuration: Dict[Municipality, dict]):
+    def schedule_municipality_calibration_runs(self, configuration: Dict[Municipality, dict], tags: List[str]):
         with self.connection as connection:
             with connection.cursor() as cursor:
                 for municipality, settings in configuration.items():
@@ -146,12 +146,13 @@ class PostgresConnection:
                             updated_at,
                             reason,
                             crawl_type,
-                            scrapy_settings
+                            scrapy_settings,
+                            tags
                         )
-                        VALUES (%s, 'NEW', 1, NOW(), NOW(), '', 'calibration', %s)
+                        VALUES (%s, 'NEW', 1, NOW(), NOW(), '', 'calibration', %s, %s)
                         RETURNING id
                         """,
-                        (municipality.url, json.dumps(settings),)
+                        (municipality.url, json.dumps(settings), tags)
                     )
                     queue_id = cursor.fetchone()[0]
 
@@ -165,7 +166,7 @@ class PostgresConnection:
 
                     logger.info(f'scheduled calibration run {queue_id} for {municipality.name_de}')
 
-    def get_finished_calibration_runs(self, limit: Optional[int]) -> List[CalibrationRun]:
+    def get_finished_calibration_runs(self, limit: Optional[int], tags: List[str]) -> List[CalibrationRun]:
         limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
         with self.connection as connection:
             with connection.cursor() as cursor:
@@ -191,8 +192,10 @@ class PostgresConnection:
                     JOIN queue_crawl qc ON cq.id = qc.queue_id
                     
                     JOIN crawl_stats cs ON qc.crawl_id = cs.crawl_id
+                    WHERE tags @> %s::varchar[]
                     {limit_query}
-                    """
+                    """,
+                    (tags,)
                 )
                 return [
                     CalibrationRun(

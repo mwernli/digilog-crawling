@@ -21,22 +21,29 @@ def parse_settings(settings) -> dict:
 def schedule_calibration_run(args):
     settings = parse_settings(args.override_settings)
     if args.calibrateSubCommand == ALL_CMD:
-        calibration.schedule_for_all_municipalities(args.settings_key, settings, args.force_all, args.limit)
+        calibration.schedule_for_all_municipalities(args.settings_key, settings, args.force_all, args.limit, tags)
     elif args.calibrateSubCommand == MUNICIPALITY_CMD:
-        calibration.schedule_for_single_municipality(args.municipality_id, args.settings_key, settings)
+        calibration.schedule_for_single_municipality(args.municipality_id, args.settings_key, settings, tags)
 
 
 def analyse_data(args):
+    tags = args.tags
+    if tags is None:
+        tags = []
     if args.analyseSubCommand == ALL_CMD:
-        analyse.analyse_all_calibration_runs(args.output_file, args.limit)
+        analyse.analyse_all_calibration_runs(args.output_file, args.limit, tags)
 
 
 def add_settings_override_parser(parser):
     parser.add_argument('-o', '--override-settings', type=str, nargs='*', dest='override_settings', metavar='KEY=VALUE', help='override individual scrapy settings')
 
 
+def add_tags_parser(parser, help_text):
+    parser.add_argument('-t', '--tags', type=str, nargs='*', dest='tags', metavar='TAG_VALUE', help=help_text)
+
+
 def add_settings_key_parser(parser, default):
-    parser.add_argument('-s', '--settings-key', type=str, default=default, dest='settings_key', choices=['DEBUG_DEFAULT', 'DEBUG_CALIBRATE', 'CALIBRATE'], help='use settings stored in default_scrapy_settings with this key')
+    parser.add_argument('-s', '--settings-key', type=str, default=default, dest='settings_key', help='use settings stored in default_scrapy_settings with this key')
 
 
 def add_calibration_parser(subparsers):
@@ -65,12 +72,14 @@ def add_calibration_parser(subparsers):
     )
     add_settings_key_parser(all_subparser, 'CALIBRATE')
     add_settings_override_parser(all_subparser)
+    add_tags_parser(all_subparser, 'tags to attach to the created queue entries')
 
     municipality_subparser = calibration_subparsers.add_parser(MUNICIPALITY_CMD,
                                                                help='given municipality id')
     municipality_subparser.add_argument('municipality_id', type=int, help='id of the municipality')
     add_settings_key_parser(municipality_subparser, 'CALIBRATE')
     add_settings_override_parser(municipality_subparser)
+    add_tags_parser(municipality_subparser, 'tags to attach to the created queue entry')
 
 
 def add_analyse_parser(subparsers):
@@ -88,6 +97,7 @@ def add_analyse_parser(subparsers):
         dest='limit',
         help='limit amount of runs to be analysed',
     )
+    add_tags_parser(all_subparser, 'only entries which contain all of the specified tags')
 
 
 def parse_args(args):
