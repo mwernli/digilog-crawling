@@ -2,6 +2,7 @@ import os
 from typing import TypeVar, Callable
 
 import psycopg2
+from psycopg2.extras import NamedTupleCursor
 from pymongo import MongoClient
 
 from .core.common.model import DataSource
@@ -46,7 +47,8 @@ class PostgresConnection:
             user=self.user,
             password=self.password,
             host=self.host,
-            port=self.port
+            port=self.port,
+            cursor_factory=NamedTupleCursor,
         )
         return connection
 
