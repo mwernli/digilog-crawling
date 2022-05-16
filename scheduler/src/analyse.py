@@ -1,6 +1,6 @@
 import datetime
 import logging
-from typing import Optional
+from typing import Optional, List
 
 import pandas as pd
 
@@ -9,14 +9,14 @@ from datasource import DataSource
 logger = logging.getLogger(__name__)
 
 
-def analyse_all_calibration_runs(output_file: str, limit: Optional[int]):
+def analyse_all_calibration_runs(output_file: str, limit: Optional[int], tags: List[str]):
     logger.info(
-        f'analysing all calibration runs, limit={limit}, outputFile={output_file}'
+        f'analysing all calibration runs, limit={limit}, outputFile={output_file}, tags={tags}'
     )
     ds = None
     try:
         ds = DataSource()
-        calibration_runs = ds.postgres.get_finished_calibration_runs(limit)
+        calibration_runs = ds.postgres.get_finished_calibration_runs(limit, tags)
         logger.info(f'found {len(calibration_runs)} crawls to process')
         rows = []
         for i, cr in enumerate(calibration_runs):
