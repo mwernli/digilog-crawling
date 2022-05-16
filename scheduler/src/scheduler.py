@@ -1,11 +1,12 @@
 import argparse
 import sys
 
+import analyse
 import calibration
 from logginghelpers import configure_logging
 
-CALIBRATE_ALL_CMD = 'all'
-CALIBRATE_MUNICIPALITY_CMD = 'municipality'
+ALL_CMD = 'all'
+MUNICIPALITY_CMD = 'municipality'
 
 
 def parse_settings(settings) -> dict:
@@ -19,10 +20,15 @@ def parse_settings(settings) -> dict:
 
 def schedule_calibration_run(args):
     settings = parse_settings(args.override_settings)
-    if args.calibrateSubCommand == CALIBRATE_ALL_CMD:
+    if args.calibrateSubCommand == ALL_CMD:
         calibration.schedule_for_all_municipalities(args.settings_key, settings, args.force_all, args.limit)
-    elif args.calibrateSubCommand == CALIBRATE_MUNICIPALITY_CMD:
+    elif args.calibrateSubCommand == MUNICIPALITY_CMD:
         calibration.schedule_for_single_municipality(args.municipality_id, args.settings_key, settings)
+
+
+def analyse_data(args):
+    if args.analyseSubCommand == ALL_CMD:
+        analyse.analyse_all_calibration_runs(args.output_file, args.limit)
 
 
 def add_settings_override_parser(parser):
@@ -40,7 +46,7 @@ def add_calibration_parser(subparsers):
     calibration_subparsers = schedule_calibration_parser.add_subparsers(
         help='schedule calibration run for:', required=True, dest='calibrateSubCommand'
     )
-    all_subparser = calibration_subparsers.add_parser(CALIBRATE_ALL_CMD,
+    all_subparser = calibration_subparsers.add_parser(ALL_CMD,
                                                       help='all municipalities')
     all_subparser.add_argument(
         '-f',
@@ -60,17 +66,35 @@ def add_calibration_parser(subparsers):
     add_settings_key_parser(all_subparser, 'CALIBRATE')
     add_settings_override_parser(all_subparser)
 
-    municipality_subparser = calibration_subparsers.add_parser(CALIBRATE_MUNICIPALITY_CMD,
-                                                     help='given municipality id')
+    municipality_subparser = calibration_subparsers.add_parser(MUNICIPALITY_CMD,
+                                                               help='given municipality id')
     municipality_subparser.add_argument('municipality_id', type=int, help='id of the municipality')
     add_settings_key_parser(municipality_subparser, 'CALIBRATE')
     add_settings_override_parser(municipality_subparser)
 
 
+def add_analyse_parser(subparsers):
+    analyse_parser = subparsers.add_parser('analyse', help='analyse data')
+    analyse_subparsers = analyse_parser.add_subparsers(help='analyse what')
+    parser = analyse_subparsers.add_parser('calibration', help='analyse calibration runs')
+    parser.set_defaults(func=analyse_data)
+    calibration_subparser = parser.add_subparsers(required=True, dest='analyseSubCommand', help='analyse calibration runs')
+    all_subparser = calibration_subparser.add_parser(ALL_CMD, help='analyse all finished calibration runs')
+    all_subparser.add_argument('-o', '--output-file', type=str, help='output data to this csv file', required=True)
+    all_subparser.add_argument(
+        '-l',
+        '--limit',
+        type=int,
+        dest='limit',
+        help='limit amount of runs to be analysed',
+    )
+
+
 def parse_args(args):
     parser = argparse.ArgumentParser('scheduler.py')
-    subparsers = parser.add_subparsers(help='scheduling types')
+    subparsers = parser.add_subparsers(help='action types')
     add_calibration_parser(subparsers)
+    add_analyse_parser(subparsers)
     arguments = parser.parse_args(args)
     return arguments
 
