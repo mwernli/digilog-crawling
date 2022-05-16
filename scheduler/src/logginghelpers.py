@@ -9,7 +9,7 @@ def get_logging_target():
     try:
         return os.environ['SCHEDULER_LOGGING_TARGET']
     except KeyError:
-        return 'LOKI'
+        return 'STDOUT'
 
 
 def get_pod_name():
