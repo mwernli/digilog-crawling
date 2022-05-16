@@ -161,7 +161,6 @@ services:
         fluentd-address: "localhost:24224"
         tag: "crawl-queue-processor"
 
-
 volumes:
   esdata:
     driver: local
