@@ -20,6 +20,9 @@ def parse_settings(settings) -> dict:
 
 def schedule_calibration_run(args):
     settings = parse_settings(args.override_settings)
+    tags = args.tags
+    if tags is None:
+        tags = []
     if args.calibrateSubCommand == ALL_CMD:
         calibration.schedule_for_all_municipalities(args.settings_key, settings, args.force_all, args.limit, tags)
     elif args.calibrateSubCommand == MUNICIPALITY_CMD:
