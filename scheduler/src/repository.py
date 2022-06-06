@@ -29,14 +29,10 @@ def municipalities_with_urls(ds: DataSource, limit: Optional[int], uncalibrated_
     with ds.postgres_cursor() as cursor:
         limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
         uncalibrated_only = """
+            AND recommended_settings IS NULL
             AND NOT EXISTS (
-                SELECT 1 FROM municipality_to_queue_entry mq
-                WHERE mq.municipality_id = m.id
-                AND EXISTS (
-                    SELECT 1 FROM crawling_queue q
-                    WHERE q.id = mq.queue_id
-                    AND q.crawl_type = 'calibration'
-                )
+                SELECT 1 FROM municipality_calibration
+                WHERE municipality_id = m.id AND analysed = FALSE
             )
             """ if uncalibrated_only else ''
         cursor.execute(
@@ -192,7 +188,7 @@ def get_latest_calibration_runs_to_analyse(ds: DataSource, limit: Optional[int])
             ) for r in cursor.fetchall()]
 
 
-def insert_new_municipality_calibration(ds: DataSource, municipality_id: int, queue_id: int, settings_key: int):
+def insert_new_municipality_calibration(ds: DataSource, municipality_id: int, queue_id: int, settings_key: str):
     with ds.postgres_cursor() as cursor:
         cursor.execute(
             """
