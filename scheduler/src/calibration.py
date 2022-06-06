@@ -26,7 +26,7 @@ def schedule_for_all_municipalities(
         municipalities = repository.municipalities_with_urls(ds, limit, not force)
         logger.info(f'found {len(municipalities)} municipalities to process')
         configuration = _get_calibration_run_configuration(ds, municipalities, settings_key, override_settings)
-        repository.schedule_municipality_calibration_runs(ds, configuration, tags)
+        _schedule_calibrations(ds, configuration, settings_key, tags)
     except Exception as e:
         logger.error(e)
 
@@ -41,7 +41,7 @@ def schedule_for_single_municipality(ds: DataSource, m_id: int, settings_key: st
     try:
         municipality = repository.get_municipality_by_id(ds, m_id)
         configuration = _get_calibration_run_configuration(ds, [municipality], settings_key, override_settings)
-        repository.schedule_municipality_calibration_runs(ds, configuration, tags)
+        _schedule_calibrations(ds, configuration, settings_key, tags)
     except Exception as e:
         logger.error(e)
 
@@ -58,3 +58,9 @@ def _get_calibration_run_configuration(
         settings = default_settings | override_settings
         result[m] = settings
     return result
+
+
+def _schedule_calibrations(ds, configuration, settings_key, tags):
+    result = repository.schedule_municipality_calibration_runs(ds, configuration, tags)
+    for m, queue_id in result.items():
+        repository.insert_new_municipality_calibration(ds, m.id, queue_id, settings_key)
