@@ -22,3 +22,5 @@ class CalibrationRun:
     queue_id: int
     crawl_id: int
     stats_id: str
+    calibration_id: int
+    settings_key: str
