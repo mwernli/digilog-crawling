@@ -1,14 +1,11 @@
-import json
+import logging
 import logging
 import os
-from typing import List, Dict, Optional
+from typing import TypeVar, Callable
 
 import psycopg2
-from bson.objectid import ObjectId
 from psycopg2.extras import NamedTupleCursor
 from pymongo import MongoClient
-
-from model import Municipality, CalibrationRun
 
 logger = logging.getLogger(__name__)
 
@@ -36,13 +33,13 @@ def get_env_int_or(name: str, default: int) -> int:
 
 
 class DataSource:
-    def __init__(self):
-        self.postgres = PostgresConnection()
-        self.mongodb = MongoDbConnection()
+    def __init__(self, postgres_connection, mongodb_db, mongodb_session):
+        self._postgres_connection = postgres_connection
+        self.mongodb = mongodb_db
+        self.mongodb_session = mongodb_session
 
-    def close(self):
-        self.postgres.close()
-        self.mongodb.close()
+    def postgres_cursor(self):
+        return self._postgres_connection.cursor()
 
 
 class PostgresConnection:
@@ -77,134 +74,6 @@ class PostgresConnection:
     def close(self):
         self.connection.close()
 
-    def get_default_settings_by_key(self, settings_key: str) -> dict:
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT settings FROM default_scrapy_settings
-                    WHERE key = %s
-                    """,
-                    (settings_key,)
-                )
-                result = cursor.fetchone()
-                if not result:
-                    raise KeyError(f'Invalid default settings key "{settings_key}"')
-                return result[0]
-
-    def municipalities_with_urls(self, limit: Optional[int], uncalibrated_only: bool) -> List[Municipality]:
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
-                uncalibrated_only = """
-                AND NOT EXISTS (
-                    SELECT 1 FROM municipality_to_queue_entry mq
-                    WHERE mq.municipality_id = m.id
-                    AND EXISTS (
-                        SELECT 1 FROM crawling_queue q
-                        WHERE q.id = mq.queue_id
-                        AND q.crawl_type = 'calibration'
-                    )
-                )
-                """ if uncalibrated_only else ''
-                cursor.execute(
-                    f"""
-                    SELECT id, name_de, url, population, area_sqm FROM municipality m
-                    WHERE m.url <> ''
-                    {uncalibrated_only}
-                    {limit_query}
-                    """
-                )
-                return [Municipality.from_named_tuple(r) for r in cursor.fetchall()]
-
-    def get_municipality_by_id(self, m_id: int) -> Municipality:
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    SELECT id, name_de, url, population, area_sqm FROM municipality
-                    WHERE id = %s
-                    """,
-                    (m_id,)
-                )
-                result = cursor.fetchone()
-                if not result:
-                    raise KeyError(f'Municipality "{m_id}" not found.')
-                return Municipality.from_named_tuple(result)
-
-    def schedule_municipality_calibration_runs(self, configuration: Dict[Municipality, dict], tags: List[str]):
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                for municipality, settings in configuration.items():
-                    cursor.execute(
-                        """
-                        INSERT INTO crawling_queue (
-                            top_url,
-                            status,
-                            priority,
-                            inserted_at,
-                            updated_at,
-                            reason,
-                            crawl_type,
-                            scrapy_settings,
-                            tags
-                        )
-                        VALUES (%s, 'NEW', 1, NOW(), NOW(), '', 'calibration', %s, %s)
-                        RETURNING id
-                        """,
-                        (municipality.url, json.dumps(settings), tags)
-                    )
-                    queue_id = cursor.fetchone()[0]
-
-                    cursor.execute(
-                        """
-                        INSERT INTO municipality_to_queue_entry (municipality_id, queue_id)
-                        VALUES (%s, %s)
-                        """,
-                        (municipality.id, queue_id)
-                    )
-
-                    logger.info(f'scheduled calibration run {queue_id} for {municipality.name_de}')
-
-    def get_finished_calibration_runs(self, limit: Optional[int], tags: List[str]) -> List[CalibrationRun]:
-        limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    f"""
-                    SELECT
-                    m.id as m_id,
-                    m.name_de,
-                    m.url,
-                    m.population,
-                    m.area_sqm,
-                    cq.id as q_id,
-                    qc.crawl_id,
-                    cs.mongo_stats_id
-                    FROM municipality m
-                    JOIN municipality_to_queue_entry mtqe ON m.id = mtqe.municipality_id
-                    
-                    JOIN crawling_queue cq
-                    ON cq.id = mtqe.queue_id
-                    AND cq.crawl_type = 'calibration'
-                    AND cq.status = 'DONE'
-                    
-                    JOIN queue_crawl qc ON cq.id = qc.queue_id
-                    
-                    JOIN crawl_stats cs ON qc.crawl_id = cs.crawl_id
-                    WHERE tags @> %s::varchar[]
-                    {limit_query}
-                    """,
-                    (tags,)
-                )
-                return [
-                    CalibrationRun(
-                        Municipality(r.m_id, r.name_de, r.url, r.population, r.area_sqm),
-                        r.q_id,
-                        r.crawl_id,
-                        r.mongo_stats_id,
-                    ) for r in cursor.fetchall()]
-
 
 class MongoDbConnection:
     def __init__(self, called_from_container: bool = True):
@@ -233,7 +102,35 @@ class MongoDbConnection:
         self.session.end_session()
         self.client.close()
 
-    def get_crawl_stats(self, stats_id: str) -> dict:
-        mongo_stats_id = ObjectId(stats_id)
-        result = self.db.crawlstats.find_one({"_id": mongo_stats_id})
-        return result['stats']
+
+R = TypeVar('R')
+
+
+class DataConnection:
+    def __init__(self):
+        try:
+            container_network = not bool(int(os.environ['OUTSIDE_NETWORK']))
+        except KeyError:
+            container_network = True
+        self.postgres = PostgresConnection(container_network)
+        self.mongodb = MongoDbConnection(container_network)
+
+    def close(self):
+        self.postgres.close()
+        self.mongodb.close()
+
+
+class DataConnectionProvider:
+    def __enter__(self) -> DataConnection:
+        self._dc = DataConnection()
+        return self._dc
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._dc.close()
+        del self._dc
+
+def call(handler: Callable[[DataSource], R]) -> R:
+    with DataConnectionProvider() as dc:
+        with dc.postgres.connection as postgres_connection, dc.mongodb:
+            ds = DataSource(postgres_connection, dc.mongodb.db, dc.mongodb.session)
+            return handler(ds)
