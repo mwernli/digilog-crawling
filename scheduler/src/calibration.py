@@ -1,53 +1,49 @@
 import logging
 from typing import List, Dict, Optional
 
+import repository
 from datasource import DataSource
+from decorators import transaction
 from model import Municipality
 
 logger = logging.getLogger(__name__)
 
 
+@transaction
 def schedule_for_all_municipalities(
-    settings_key: str,
-    override_settings: dict,
-    force: bool,
-    limit: Optional[int],
-    tags: List[str],
+        ds: DataSource,
+        settings_key: str,
+        override_settings: dict,
+        force: bool,
+        limit: Optional[int],
+        tags: List[str],
 ):
     logger.info(
         f'scheduling calibration runs for uncalibrated municipalities force={force}, limit={limit}, '
         f'settings key={settings_key}, tags={tags}, overridden settings: {override_settings}'
     )
-    ds = None
     try:
-        ds = DataSource()
-        municipalities = ds.postgres.municipalities_with_urls(limit, not force)
+        municipalities = repository.municipalities_with_urls(ds, limit, not force)
         logger.info(f'found {len(municipalities)} municipalities to process')
         configuration = _get_calibration_run_configuration(ds, municipalities, settings_key, override_settings)
-        ds.postgres.schedule_municipality_calibration_runs(configuration, tags)
+        repository.schedule_municipality_calibration_runs(ds, configuration, tags)
     except Exception as e:
         logger.error(e)
-    finally:
-        if ds is not None:
-            ds.close()
 
 
-def schedule_for_single_municipality(m_id: int, settings_key: str, override_settings: dict, tags: List[str]):
+@transaction
+def schedule_for_single_municipality(ds: DataSource, m_id: int, settings_key: str, override_settings: dict,
+                                     tags: List[str]):
     logger.info(
         f'scheduling calibration run for municipality {m_id} '
         f'with settings key {settings_key}, tags={tags} overriden settings = {override_settings}'
     )
-    ds = None
     try:
-        ds = DataSource()
-        municipality = ds.postgres.get_municipality_by_id(m_id)
+        municipality = repository.get_municipality_by_id(ds, m_id)
         configuration = _get_calibration_run_configuration(ds, [municipality], settings_key, override_settings)
-        ds.postgres.schedule_municipality_calibration_runs(configuration, tags)
+        repository.schedule_municipality_calibration_runs(ds, configuration, tags)
     except Exception as e:
         logger.error(e)
-    finally:
-        if ds is not None:
-            ds.close()
 
 
 def _get_calibration_run_configuration(
@@ -56,7 +52,7 @@ def _get_calibration_run_configuration(
         settings_key: str,
         override_settings: dict,
 ) -> Dict[Municipality, dict]:
-    default_settings = ds.postgres.get_default_settings_by_key(settings_key)
+    default_settings = repository.get_default_settings_by_key(ds, settings_key)
     result = {}
     for m in municipalities:
         settings = default_settings | override_settings
