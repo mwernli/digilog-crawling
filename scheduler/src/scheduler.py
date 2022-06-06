@@ -7,6 +7,8 @@ from logginghelpers import configure_logging
 
 ALL_CMD = 'all'
 MUNICIPALITY_CMD = 'municipality'
+FILE_CMD = 'file'
+LATEST_CMD = 'latest'
 
 
 def parse_settings(settings) -> dict:
@@ -30,11 +32,13 @@ def schedule_calibration_run(args):
 
 
 def analyse_data(args):
-    tags = args.tags
+    tags = args.tags if hasattr(args, 'tags') else None
     if tags is None:
         tags = []
-    if args.analyseSubCommand == ALL_CMD:
-        analyse.analyse_all_calibration_runs(args.output_file, args.limit, tags)
+    if args.analyseSubCommand == FILE_CMD:
+        analyse.analyse_all_calibration_runs_to_file(args.output_file, args.limit, tags)
+    elif args.analyseSubCommand == LATEST_CMD:
+        analyse.analyse_latest(args.limit)
 
 
 def add_settings_override_parser(parser):
@@ -91,7 +95,7 @@ def add_analyse_parser(subparsers):
     parser = analyse_subparsers.add_parser('calibration', help='analyse calibration runs')
     parser.set_defaults(func=analyse_data)
     calibration_subparser = parser.add_subparsers(required=True, dest='analyseSubCommand', help='analyse calibration runs')
-    all_subparser = calibration_subparser.add_parser(ALL_CMD, help='analyse all finished calibration runs')
+    all_subparser = calibration_subparser.add_parser(FILE_CMD, help='analyse all finished calibration runs and save as file')
     all_subparser.add_argument('-o', '--output-file', type=str, help='output data to this csv file', required=True)
     all_subparser.add_argument(
         '-l',
@@ -101,6 +105,15 @@ def add_analyse_parser(subparsers):
         help='limit amount of runs to be analysed',
     )
     add_tags_parser(all_subparser, 'only entries which contain all of the specified tags')
+
+    latest_subparser = calibration_subparser.add_parser(LATEST_CMD, help='analyse latest finished runs of uncalibrated municipalities')
+    latest_subparser.add_argument(
+        '-l',
+        '--limit',
+        type=int,
+        dest='limit',
+        help='limit amount of runs to be analysed',
+    )
 
 
 def parse_args(args):
