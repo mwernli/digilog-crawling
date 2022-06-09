@@ -106,6 +106,21 @@ class PostgresConnection:
                 result = cursor.fetchone()[0]
                 return result
 
+
+    def insert_crawl_status(self, crawl_id: int, status: str):
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    INSERT INTO crawl_run_status (crawl_id, status)
+                    VALUES ({crawl_id}, '{status}')
+                    ON CONFLICT (crawl_id) 
+                    DO UPDATE SET status= excluded.status;
+                    """
+                    # (crawl_id, status)
+                )
+
+
     def insert_queue_crawl_connection(self, queue_id: int, crawl_id: int):
         with self.connection as connection:
             with connection.cursor() as cursor:
@@ -176,7 +191,7 @@ class PostgresConnection:
                     """,
                     (mongo_id, result_id)
                 )
-
+    
     def load_next_queue_entry(self) -> Optional[QueueEntry]:
         with self.connection as connection:
             with connection.cursor() as cursor:

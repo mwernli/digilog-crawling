@@ -33,6 +33,7 @@ class PointerCrawlSpider(scrapy.Spider):
         self.matcher.add('InterestingWord', [self.nlp(keyword) for keyword in self.keywords])
 
         self.crawl_id = self.ds.postgres.insert_crawl(url, self.name)
+        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLING')
         self.logger.info("Inserted new crawl with ID: {}".format(self.crawl_id))
         
     def start_requests(self):
@@ -66,6 +67,7 @@ class PointerCrawlSpider(scrapy.Spider):
 
     def closed(self, reason):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
+        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLED')
         self.save_stats()
         self.ds.close()
 
