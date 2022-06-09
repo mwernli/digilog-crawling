@@ -37,6 +37,7 @@ class SimplePipeline:
         url = normalize_url(spider.url)
         if not hasattr(spider, 'crawl_id'):
             spider.crawl_id = spider.ds.postgres.insert_crawl(url, spider.name)
+            spider.ds.postgres.insert_crawl_status(spider.crawl_id, 'CRAWLING')
             logger.info("Inserted new crawl with ID: {}".format(spider.crawl_id))
         head_id = spider.ds.postgres.insert_result_record(spider.crawl_id, url)
         self.url_dict[url] = head_id
