@@ -36,11 +36,11 @@ def load_basic_crawl_stats_by_crawl_id(ds: DataSource, crawl_id: int) -> BasicCr
         c.execute(
             """
             WITH url_amount AS (
-                SELECT COUNT(*) as amount FROM digilog.digilog.crawl_result
+                SELECT COUNT(*) as url_amount FROM digilog.digilog.crawl_result
                 WHERE crawl_id = %s 
             ),
             crawled_page_amount AS (
-                SELECT COUNT(*) as amount FROM digilog.digilog.crawl_result
+                SELECT COUNT(*) as crawled_page_amount FROM digilog.digilog.crawl_result
                 WHERE crawl_id = %s AND mongo_id IS NOT NULL
             )
             SELECT * FROM url_amount CROSS JOIN crawled_page_amount

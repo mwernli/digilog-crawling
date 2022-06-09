@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+import os
 from subprocess import run
 from time import sleep
 
@@ -7,25 +7,32 @@ from digilog.DataSource import DataSourceContext, QueueEntry
 
 FORMAT = '%(asctime)s [QueueProcessor] [main] %(levelname)s: %(message)s'
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
-logging.basicConfig(
-    format=FORMAT,
-    datefmt=DATE_FORMAT,
-    filename='/var/log/scrapy/processor.log',
-    filemode='a',
-)
+logging_target = 'STDOUT'
+try:
+    logging_target = os.environ['QUEUE_PROCESSOR_LOGGING_TARGET']
+except KeyError:
+    pass
+if logging_target != 'STDOUT':
+    logging.basicConfig(
+        format=FORMAT,
+        datefmt=DATE_FORMAT,
+        filename=logging_target,
+        filemode='a',
+    )
+else:
+    logging.basicConfig(
+        format=FORMAT,
+        datefmt=DATE_FORMAT,
+    )
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-@dataclass(frozen=True)
-class RunOptions:
-    parallel_count: int
-    delay_when_empty_seconds: int
-    loading_chunk_size: int
-
-
 def process_entry(entry: QueueEntry):
-    run(['python', 'run_crawl.py', 'queued', str(entry.id), '-s', 'DEPTH_LIMIT=2'])
+    settings = [f'{k}={v}' for k, v in entry.settings.items()]
+    if len(settings) > 0:
+        settings = ['-s'] + settings
+    run(['python', 'run_crawl.py', entry.crawl_type, str(entry.id)] + settings)
 
 
 def process_queue():

@@ -21,6 +21,8 @@ def condense(s: str) -> str:
 class QueueEntry:
     id: int
     url: str
+    crawl_type: str
+    settings: dict
 
 
 class QueueStatus(Enum):
@@ -37,8 +39,19 @@ def get_env_str(name: str) -> str:
         raise ValueError(f'Environment variable "{name}" is not set')
 
 
+def get_env_str_or(name: str, default: str) -> str:
+    try:
+        return get_env_str(name)
+    except ValueError:
+        return default
+
+
 def get_env_int(name: str) -> int:
     return int(get_env_str(name))
+
+
+def get_env_int_or(name: str, default: int) -> int:
+    return int(get_env_str_or(name, str(default)))
 
 
 class DataSource:
@@ -52,22 +65,14 @@ class DataSource:
 
 
 class PostgresConnection:
-    def __init__(self, called_from_container:bool = True):
+    def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            # self.host = 'digilog-postgres'
-            # self.port = 5432
-            # self.user = 'digilog'
-            # self.password = 'password'
-            # self.db = 'digilog'
-            # self.schema = 'digilog'
-
-            # TODO: debug not set env variable 
-            self.host = get_env_str('POSTGRES_SERVICE_HOST')
-            self.port = get_env_int('POSTGRES_SERVICE_PORT')
-            self.user = get_env_str('POSTGRES_USER')
-            self.password = get_env_str('POSTGRES_PASSWORD')
-            self.db = get_env_str('POSTGRES_DB')
-            self.schema = get_env_str('POSTGRES_DB')
+            self.host = get_env_str_or('POSTGRES_SERVICE_HOST', 'digilog-postgres')
+            self.port = get_env_int_or('POSTGRES_SERVICE_PORT', 5432)
+            self.user = get_env_str_or('POSTGRES_USER', 'digilog')
+            self.password = get_env_str_or('POSTGRES_PASSWORD', 'password')
+            self.db = get_env_str_or('POSTGRES_DB', 'digilog')
+            self.schema = get_env_str_or('POSTGRES_DB', 'digilog')
         else:
             self.host = 'localhost'
             self.port = 5500
@@ -185,27 +190,27 @@ class PostgresConnection:
                         ORDER BY priority
                         LIMIT 1
                         FOR UPDATE SKIP LOCKED
-                    ) RETURNING id, top_url;
+                    ) RETURNING id, top_url, crawl_type, scrapy_settings;
                     """,
                 )
                 result = cursor.fetchone()
                 if not result:
                     return None
-                return QueueEntry(result[0], result[1])
+                return QueueEntry(result[0], result[1], result[2], result[3])
 
     def get_queue_entry_by_id(self, id: int) -> QueueEntry:
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    SELECT id, top_url
+                    SELECT id, top_url, crawl_type, scrapy_settings
                     FROM crawling_queue
                     WHERE id = %s
                     """,
                     (id,)
                 )
                 result = cursor.fetchone()
-                return QueueEntry(result[0], result[1])
+                return QueueEntry(result[0], result[1], result[2], result[3])
 
     def update_queue_status(self, id: int, status: QueueStatus, reason: str = ''):
         with self.connection as connection:
@@ -229,48 +234,6 @@ class PostgresConnection:
                     """,
                     (crawl_id, stats_id)
                 )
-    
-    def get_last_analyzed_crawl(self) -> int:
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    '''
-                    SELECT crawl_id FROM crawl_analysis ORDER BY crawl_id DESC LIMIT 1;
-                    '''
-                    )
-                result = cursor.fetchone()
-                return result[0]
-
-
-    def insert_crawl_analysis_processing(self, crawl_id: int):
-
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    INSERT INTO crawl_analysis (crawl_id, mongo_stats_id)
-                    VALUES (%s, %s)
-                    """,
-                    (crawl_id, 'processing', )
-                )
-
-
-    def get_last_crawl(self) -> int:
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    '''
-                    SELECT queue_craw.crawl_id 
-                    FROM queue_crawl 
-                    LEFT JOIN crawling_queue on crawling_queue.id = queue_crawl.queue_id
-                    WHERE crawling_queue.status = 'DONE'
-                    ORDER BY queue_craw.queued_id DESC LIMIT 1
-                    ;
-                    '''
-                    )
-                result = cursor.fetchone()
-                return result[0]
-
 
 
     def close(self):
@@ -280,16 +243,10 @@ class PostgresConnection:
 class MongoDbConnection:
     def __init__(self, called_from_container: bool = True):
         if called_from_container:
-            # self.host = 'digilog-mongodb'
-            # self.port = 27017
-            # self.user = 'root'
-            # self.password = 'mongopwd'
-
-            # TODO debug not set env variable 
-            self.host = get_env_str('MONGODB_SERVICE_HOST')
-            self.port = get_env_int('MONGODB_SERVICE_PORT')
-            self.user = get_env_str('MONGODB_USER')
-            self.password = get_env_str('MONGODB_PASSWORD')
+            self.host = get_env_str_or('MONGODB_SERVICE_HOST', 'digilog-mongodb')
+            self.port = get_env_int_or('MONGODB_SERVICE_PORT', 27017)
+            self.user = get_env_str_or('MONGODB_USER', 'root')
+            self.password = get_env_str_or('MONGODB_PASSWORD', 'mongopwd')
         else:
             self.host = 'localhost'
             self.port = 5550

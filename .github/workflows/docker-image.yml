@@ -2,10 +2,8 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+    tags:
+      - 'v*'
 jobs:
 
   build:
@@ -19,21 +17,75 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USER }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
+    - name: "scrapy: tags"
+      id: scrapy-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-scrapy
+        tags: |
+          type=ref,event=branch
+          type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
     - name: "scrapy: Build and push"
       uses: docker/build-push-action@v2
       with:
         context: ./scrapy/.
-        push: true
-        tags: trephor/digilog-scrapy
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.scrapy-meta.outputs.tags }}
+        labels: ${{ steps.scrapy-meta.outputs.labels }}
+    - name: "web: tags"
+      id: web-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-web
+        tags: |
+          type=ref,event=branch
+          type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
     - name: "web: Build and push"
       uses: docker/build-push-action@v2
       with:
         context: ./web/.
-        push: true
-        tags: trephor/digilog-web
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.web-meta.outputs.tags }}
+        labels: ${{ steps.web-meta.outputs.labels }}
+    - name: "flyway: tags"
+      id: flyway-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-flyway
+        tags: |
+          type=ref,event=branch
+          type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
     - name: "flyway: Build and push"
       uses: docker/build-push-action@v2
       with:
         context: ./flyway/.
-        push: true
-        tags: trephor/digilog-flyway
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.flyway-meta.outputs.tags }}
+        labels: ${{ steps.flyway-meta.outputs.labels }}
+    - name: "scheduler: tags"
+      id: scheduler-meta
+      uses: docker/metadata-action@v4
+      with:
+        images: |
+          trephor/digilog-scheduler
+        tags: |
+          type=ref,event=branch
+          type=sha
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+    - name: "scheduler: Build and push"
+      uses: docker/build-push-action@v2
+      with:
+        context: ./scheduler/.
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.scheduler-meta.outputs.tags }}
+        labels: ${{ steps.scheduler-meta.outputs.labels }}

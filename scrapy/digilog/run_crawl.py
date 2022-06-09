@@ -1,7 +1,8 @@
 import argparse
 import logging
+import os
+import os.path
 import sys
-import os, os.path
 
 from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
@@ -21,6 +22,7 @@ def parse_args(args):
     subparsers = parser.add_subparsers(help='running modes')
     add_simple_spider_parser(subparsers)
     add_queued_parser(subparsers)
+    add_calibration_parser(subparsers)
     add_pointer_parser(subparsers)
     arguments = parser.parse_args(args)
     return arguments
@@ -37,6 +39,14 @@ def add_simple_spider_parser(subparsers):
 def add_queued_parser(subparsers):
     queued_parser = subparsers.add_parser('queued', help='process a queue entry')
     queued_parser.set_defaults(func=run_queued)
+    queued_parser.add_argument('id', type=int, help='The ID of the queue entry to process')
+    add_settings_parser(queued_parser)
+    return queued_parser
+
+
+def add_calibration_parser(subparsers):
+    queued_parser = subparsers.add_parser('calibration', help='perform a calibration run')
+    queued_parser.set_defaults(func=run_calibration)
     queued_parser.add_argument('id', type=int, help='The ID of the queue entry to process')
     add_settings_parser(queued_parser)
     return queued_parser
@@ -62,17 +72,29 @@ def merge_settings_with_args(settings_args):
     return settings
 
 
+def get_logging_target():
+    try:
+        return os.environ['CRAWL_LOGGING_TARGET']
+    except KeyError:
+        return 'STDOUT'
+
+
+def get_handler():
+    try:
+        target = get_logging_target()
+        if target == 'STDOUT':
+            return logging.StreamHandler()
+        return logging.FileHandler(filename=target, mode='a')
+    except FileNotFoundError:
+        os.makedirs('/tmp/log/scrapy/', mode=0o777)
+        return logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
+
+
 def configure_logging(settings, log_format=None):
     if log_format is None:
         log_format = settings.get('LOG_FORMAT')
     log_level = settings.get('LOG_LEVEL')
-    try:
-        # handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
-        handler = logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
-    except FileNotFoundError:
-        os.makedirs('/tmp/log/scrapy/', mode=0o777)
-        # handler = logging.FileHandler(filename='/var/log/scrapy/crawl.log', mode='a')
-        handler = logging.FileHandler(filename='/tmp/log/scrapy/crawl.log', mode='a')
+    handler = get_handler()
     handler.setFormatter(NewlineRemovingFormatter(log_format, settings.get('LOG_DATEFORMAT')))
     handler.setLevel(log_level)
     logging.basicConfig(handlers=[handler], level=settings.get('LOG_LEVEL'))
@@ -100,6 +122,21 @@ def run_queued(args):
 
     process.crawl('queued', queue_id=args.id)
     process.start()  # the script will block here until the crawling is finished
+
+
+def run_calibration(args):
+    settings = merge_settings_with_args(args.settings)
+
+    configured_log_format = str(settings.get('LOG_FORMAT'))
+    queued_log_format = configured_log_format.replace(
+        '%(asctime)s', '%(asctime)s [calibration-queue-entry-{}]'.format(args.id)
+    )
+    configure_logging(settings, queued_log_format)
+
+    process = CrawlerProcess(settings=settings, install_root_handler=False)
+
+    process.crawl('calibration', queue_id=args.id)
+    process.start()
 
 
 def run_pointer(args):

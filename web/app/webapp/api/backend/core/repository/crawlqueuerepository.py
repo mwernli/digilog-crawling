@@ -1,3 +1,4 @@
+import json
 from typing import Union, Iterable
 
 from webapp.api.backend.core.common.model import DataSource
@@ -20,15 +21,24 @@ def load_crawl_queue_entry_by_crawl_id(ds: DataSource, crawl_id: int) -> Union[C
             return None
 
 
-def enqueue_crawl(ds: DataSource, url: str, priority: int) -> CrawlQueueEntity:
+def enqueue_crawl(ds: DataSource, url: str, priority: int, crawl_type: str, settings: dict) -> CrawlQueueEntity:
     with ds.postgres_cursor() as c:
         c.execute(
             """
-            INSERT INTO crawling_queue (top_url, status, priority, inserted_at, updated_at, reason)
-            VALUES (%s, %s, %s, now(), now(), '')
+            INSERT INTO crawling_queue (
+                top_url,
+                status,
+                priority,
+                inserted_at,
+                updated_at,
+                reason,
+                crawl_type,
+                scrapy_settings
+            )
+            VALUES (%s, %s, %s, NOW(), NOW(), '', %s, %s)
             RETURNING *
             """,
-            (url, QueueStatus.NEW.name, priority, )
+            (url, QueueStatus.NEW.name, priority, crawl_type, json.dumps(settings),)
         )
         return CrawlQueueEntity.from_record(c.fetchone())
 
@@ -40,29 +50,51 @@ def load_queue_crawls_of_queue_ids(ds: DataSource, queue_ids: Iterable[int]) -> 
     with ds.postgres_cursor() as c:
         c.execute(
             """
-            SELECT q.*, c.* FROM crawling_queue as q
-            LEFT JOIN queue_crawl as qc
+            SELECT
+            q.id AS q_id,
+            q.top_url AS q_top_url,
+            q.status,
+            q.priority,
+            q.inserted_at AS q_inserted_at,
+            q.updated_at,
+            q.reason,
+            c.id AS c_id,
+            c.inserted_at AS c_inserted_at,
+            c.top_url AS c_top_url
+            FROM crawling_queue AS q
+            LEFT JOIN queue_crawl AS qc
             ON qc.queue_id = q.id
-            LEFT JOIN crawl as c
+            LEFT JOIN crawl AS c
             ON c.id = qc.crawl_id
             WHERE q.id IN %s
             """,
             (ids,)
         )
-        return map(QueueCrawl.from_record, c.fetchall())
+        return map(QueueCrawl.from_named_record, c.fetchall())
 
 
 def load_queue_crawls_with_limit(ds: DataSource, row_limit: int) -> Iterable[QueueCrawl]:
     with ds.postgres_cursor() as c:
         c.execute(
             """
-            SELECT q.*, c.* FROM crawling_queue as q
-            LEFT JOIN queue_crawl as qc
+            SELECT
+            q.id AS q_id,
+            q.top_url AS q_top_url,
+            q.status,
+            q.priority,
+            q.inserted_at AS q_inserted_at,
+            q.updated_at,
+            q.reason,
+            c.id AS c_id,
+            c.inserted_at AS c_inserted_at,
+            c.top_url AS c_top_url
+            FROM crawling_queue AS q
+            LEFT JOIN queue_crawl AS qc
             ON qc.queue_id = q.id
-            LEFT JOIN crawl as c
+            LEFT JOIN crawl AS c
             ON c.id = qc.crawl_id
             LIMIT %s
             """,
             (row_limit,)
         )
-        return map(QueueCrawl.from_record, c.fetchall())
+        return map(QueueCrawl.from_named_record, c.fetchall())
