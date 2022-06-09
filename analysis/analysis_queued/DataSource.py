@@ -241,31 +241,12 @@ class PostgresConnection:
                 result = cursor.fetchone()
                 return result[0]
 
-
-    def insert_crawl_analysis_processing(self, crawl_id: int):
-
-        with self.connection as connection:
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    INSERT INTO crawl_analysis (crawl_id, mongo_stats_id)
-                    VALUES (%s, %s)
-                    """,
-                    (crawl_id, 'processing', )
-                )
-
-
     def get_last_crawl(self) -> int:
         with self.connection as connection:
             with connection.cursor() as cursor:
                 cursor.execute(
                     '''
-                    SELECT queue_craw.crawl_id 
-                    FROM queue_crawl 
-                    LEFT JOIN crawling_queue on crawling_queue.id = queue_crawl.queue_id
-                    WHERE crawling_queue.status = 'DONE'
-                    ORDER BY queue_craw.queued_id DESC LIMIT 1
-                    ;
+                    SELECT id FROM crawl ORDER BY id DESC LIMIT 1;
                     '''
                     )
                 result = cursor.fetchone()
