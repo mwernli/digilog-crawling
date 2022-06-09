@@ -20,6 +20,7 @@ class QueuedEntrySpider(scrapy.Spider):
         self.allowed_domains = [self.domain]
 
         self.crawl_id = self.ds.postgres.insert_crawl(self.url, self.name)
+        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLING')
         self.logger.info(f'Inserted new crawl with URL {self.url}, ID [{self.crawl_id}]')
 
     def start_requests(self):
@@ -41,6 +42,7 @@ class QueuedEntrySpider(scrapy.Spider):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
         status = QueueStatus.DONE if reason == 'finished' else QueueStatus.ERROR
         self.ds.postgres.update_queue_status(self.queue_entry.id, status, reason)
+        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLED')
         self.save_stats()
         self.ds.close()
 
