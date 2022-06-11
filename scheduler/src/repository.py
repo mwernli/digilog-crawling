@@ -38,7 +38,7 @@ def municipalities_with_urls(ds: DataSource, limit: Optional[int], uncalibrated_
         cursor.execute(
             f"""
             SELECT id, name_de, url, population, area_sqm FROM municipality m
-            WHERE m.url <> ''
+            WHERE m.url <> '' AND m.do_not_crawl = FALSE
             {uncalibrated_only}
             {limit_query}
             """
