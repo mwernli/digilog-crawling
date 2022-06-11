@@ -116,6 +116,7 @@ def analyse_runs_with_manual_check(ds: DataSource, limit: Optional[int]):
             else:
                 connection_error_count += 1
                 logger.warning(f'detected connection issue for {m}')
+                repository.update_manual_calibration_resolution(ds, m.id, 'CONNECTION_ISSUE')
         logger.info(f'detected {redirect_count} redirections, '
                     f'{connection_error_count} connection issues '
                     f'and {other_issues_count} urls without issues.')
