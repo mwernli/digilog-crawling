@@ -41,6 +41,10 @@ def analyse_data(args):
         analyse.analyse_latest(args.limit)
 
 
+def analyse_manuals(args):
+    analyse.analyse_runs_with_manual_check(args.limit)
+
+
 def add_settings_override_parser(parser):
     parser.add_argument('-o', '--override-settings', type=str, nargs='*', dest='override_settings', metavar='KEY=VALUE', help='override individual scrapy settings')
 
@@ -113,6 +117,16 @@ def add_analyse_parser(subparsers):
         type=int,
         dest='limit',
         help='limit amount of runs to be analysed',
+    )
+
+    manuals_subparser = analyse_subparsers.add_parser('manual-check', help='analyse urls with manual check flag')
+    manuals_subparser.set_defaults(func=analyse_manuals)
+    manuals_subparser.add_argument(
+        '-l',
+        '--limit',
+        type=int,
+        dest='limit',
+        help='limit amount of entries to be analysed',
     )
 
 

@@ -1,7 +1,9 @@
+import requests
+from multiprocessing import Pool
 import datetime
 import logging
 from typing import Optional, List, Dict
-
+from urllib3.util import parse_url
 import pandas as pd
 
 import repository
@@ -81,6 +83,81 @@ def analyse_latest(ds: DataSource, limit: Optional[int]):
             repository.set_do_not_crawl(ds, m.id, True)
             repository.update_municipality_calibration(ds, r['calibration_id'], True, True)
 
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+
+@transaction
+def analyse_runs_with_manual_check(ds: DataSource, limit: Optional[int]):
+    logger.info(
+        f'analysing municipalities with manual check requirement, limit={limit}'
+    )
+    try:
+        municipalities = repository.get_calibrations_with_manual_check_required(ds, limit)
+        logger.info(f'found {len(municipalities)} municipalities for manual checking')
+        redirect_count = 0
+        other_issues_count = 0
+        connection_error_count = 0
+        with Pool(5) as p:
+            results = p.map(_check_url, municipalities)
+        for result in results:
+            m = result['municipality']
+            if 'urlChain' in result:
+                uc = result['urlChain']
+                if len(uc) > 1:
+                    redirect_count += 1
+                    logger.info(f'detected redirect for {m.id} {m.name_de} from {m.url} to {uc[-1]}, updating')
+                    repository.update_url_after_manual_check(ds, m.id, uc[-1])
+                else:
+                    other_issues_count += 1
+                    logger.info(f'no issue with url of {m} detected')
+                    repository.update_manual_calibration_resolution(ds, m.id, 'NO_ISSUE_DETECTED')
+            else:
+                connection_error_count += 1
+                logger.warning(f'detected connection issue for {m}')
+        logger.info(f'detected {redirect_count} redirections, '
+                    f'{connection_error_count} connection issues '
+                    f'and {other_issues_count} urls without issues.')
+
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+
+def _check_url(municipality: Municipality) -> dict:
+    parsed_url = parse_url(municipality.url)
+    if parsed_url.scheme is None:
+        url = 'http://' + parsed_url.url
+    else:
+        url = parsed_url
+    logger.info(f'querying municipality {municipality.name_de} with url {url}')
+    try:
+        chain = _check_url_rec([url])
+        return {
+            'municipality': municipality,
+            'urlChain': chain,
+        }
+    except Exception as e:
+        return {
+            'municipality': municipality,
+            'error': e,
+        }
+
+
+def _check_url_rec(chain: List[str]):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36'
+    }
+    try:
+        url = chain[-1]
+        response = requests.get(url, timeout=5, allow_redirects=False, verify=True, headers=headers)
+        if response.is_redirect and len(chain) < 10:
+            chain.append(response.next.url)
+            return _check_url_rec(chain)
+        else:
+            return chain
     except Exception as e:
         logger.error(e)
         raise e

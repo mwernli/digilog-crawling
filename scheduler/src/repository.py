@@ -245,3 +245,54 @@ def get_multiple_crawl_stats(ds: DataSource, stats_ids: List[str]) -> dict[str, 
     for doc in cursor:
         result[str(doc['_id'])] = doc['stats']
     return result
+
+
+def get_calibrations_with_manual_check_required(ds: DataSource, limit: Optional[int]) -> List[Municipality]:
+    limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
+    with ds.postgres_cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT id, name_de, url, population, area_sqm FROM municipality m
+            WHERE m.url <> ''
+            AND EXISTS(
+                SELECT 1 FROM municipality_calibration mc
+                WHERE mc.municipality_id = m.id
+                AND mc.manual_check_required = TRUE
+                AND mc.resolution IS NULL
+            )
+            {limit_query}
+            """
+        )
+        return [Municipality.from_named_tuple(r) for r in cursor.fetchall()]
+
+
+def update_url_after_manual_check(ds: DataSource, municipality_id: int, new_url: str):
+    with ds.postgres_cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE municipality
+            SET url = %s, do_not_crawl = FALSE
+            WHERE id = %s
+            """,
+            (new_url, municipality_id,)
+        )
+        cursor.execute(
+            """
+            UPDATE municipality_calibration
+            SET manual_check_required = FALSE, resolution = 'REDIRECT_DETECTED'
+            WHERE municipality_id = %s
+            """,
+            (municipality_id,)
+        )
+
+
+def update_manual_calibration_resolution(ds: DataSource, municipality_id: int, resolution: str):
+    with ds.postgres_cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE municipality_calibration
+            SET resolution = %s
+            WHERE municipality_id = %s AND resolution IS NULL
+            """,
+            (resolution, municipality_id,)
+        )
