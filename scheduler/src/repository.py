@@ -204,7 +204,7 @@ def update_municipality_calibration(ds: DataSource, calibration_id: int, analyse
         cursor.execute(
             """
             UPDATE municipality_calibration 
-            SET analysed = %s, manual_check_required = %s
+            SET analysed = %s, manual_check_required = %s, updated_at = NOW()
             WHERE id = %s
             """,
             (analysed, manual_check_required, calibration_id),
@@ -279,7 +279,7 @@ def update_url_after_manual_check(ds: DataSource, municipality_id: int, new_url:
         cursor.execute(
             """
             UPDATE municipality_calibration
-            SET manual_check_required = FALSE, resolution = 'REDIRECT_DETECTED'
+            SET manual_check_required = FALSE, resolution = 'REDIRECT_DETECTED', updated_at = NOW()
             WHERE municipality_id = %s
             """,
             (municipality_id,)
@@ -291,7 +291,7 @@ def update_manual_calibration_resolution(ds: DataSource, municipality_id: int, r
         cursor.execute(
             """
             UPDATE municipality_calibration
-            SET resolution = %s
+            SET resolution = %s, updated_at = NOW()
             WHERE municipality_id = %s AND resolution IS NULL
             """,
             (resolution, municipality_id,)
