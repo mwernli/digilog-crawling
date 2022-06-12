@@ -54,11 +54,8 @@ def _get_calibration_run_configuration(
         override_settings: dict,
 ) -> Dict[Municipality, dict]:
     default_settings = repository.get_default_settings_by_key(ds, settings_key)
-    result = {}
-    for m in municipalities:
-        settings = default_settings | override_settings
-        result[m] = settings
-    return result
+    settings = default_settings | override_settings
+    return {m: settings for m in municipalities}
 
 
 def _schedule_calibrations(ds, configuration, settings_key, tags):
