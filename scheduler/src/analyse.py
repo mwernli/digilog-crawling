@@ -1,10 +1,11 @@
-import requests
-from multiprocessing import Pool
 import datetime
 import logging
+from multiprocessing import Pool
 from typing import Optional, List, Dict
-from urllib3.util import parse_url
+
 import pandas as pd
+import requests
+from urllib3.util import parse_url
 
 import repository
 from datasource import DataSource
@@ -66,7 +67,8 @@ def analyse_latest(ds: DataSource, limit: Optional[int]):
 
         logger.info(f'found {len(reduce_crawling_speed)} municipalities for which to reduce crawling speed')
         to_schedule = {m: _load_settings(ds, r['settings_key']) for (m, r) in reduce_crawling_speed.items()}
-        scheduled = repository.schedule_municipality_calibration_runs(ds, to_schedule, ['SPEED_REDUCED', 'AUTO'])
+        tags = ['SPEED_REDUCED', 'AUTO', datetime.datetime.utcnow().isoformat()]
+        scheduled = repository.schedule_municipality_calibration_runs(ds, to_schedule, tags)
         for m, queue_id in scheduled.items():
             settings_key = rows[m]['settings_key']
             old_calibration_id = rows[m]['calibration_id']
