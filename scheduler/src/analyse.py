@@ -23,6 +23,9 @@ def analyse_all_calibration_runs_to_file(ds: DataSource, output_file: str, limit
     try:
         calibration_runs = repository.get_finished_calibration_runs(ds, limit, tags)
         logger.info(f'found {len(calibration_runs)} crawls to process')
+        if len(calibration_runs) == 0:
+            logger.info(f'no crawls found, terminating.')
+            return
         rows = _get_calibration_run_stats(ds, calibration_runs)
         logger.info(f'done, saving to csv file {output_file}')
         df = pd.DataFrame(rows.values())
