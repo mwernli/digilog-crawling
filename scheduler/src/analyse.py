@@ -179,6 +179,8 @@ def _get_slower_settings_key(key: str) -> str:
             return 'CALIBRATE_MEDIUM_SLOW'
         case 'CALIBRATE_MEDIUM_SLOW':
             return 'CALIBRATE_SLOW'
+        case 'CALIBRATE_SLOW':
+            return 'CALIBRATE_SLOWEST'
         case _:
             raise ValueError(f'No slower calibration method than {key} configured')
 
@@ -207,7 +209,7 @@ def _row_identifier(r: dict) -> str:
 
 
 def _determine_action_for_calibration_crawl(r: dict) -> str:
-    if r['settings_key'] != 'CALIBRATE_SLOW' and (
+    if r['settings_key'] != 'CALIBRATE_SLOWEST' and (
             r['too_many_requests_count'] > 0 or
             r['downloader_timeout_count'] / _sum_of_downloader_stats(r) >= 0.05
     ):
