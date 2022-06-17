@@ -159,7 +159,7 @@ def _check_url_rec(chain: List[str]):
     try:
         url = chain[-1]
         response = requests.get(url, timeout=5, allow_redirects=False, verify=True, headers=headers)
-        if response.is_redirect and len(chain) < 10:
+        if response.is_permanent_redirect and len(chain) < 10:
             chain.append(response.next.url)
             return _check_url_rec(chain)
         else:
