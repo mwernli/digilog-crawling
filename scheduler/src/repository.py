@@ -281,6 +281,8 @@ def update_url_after_manual_check(ds: DataSource, municipality_id: int, new_url:
             UPDATE municipality_calibration
             SET manual_check_required = FALSE, resolution = 'REDIRECT_DETECTED', updated_at = NOW()
             WHERE municipality_id = %s
+            AND manual_check_required = TRUE
+            AND resolution IS NULL
             """,
             (municipality_id,)
         )
@@ -292,7 +294,7 @@ def update_manual_calibration_resolution(ds: DataSource, municipality_id: int, r
             """
             UPDATE municipality_calibration
             SET resolution = %s, updated_at = NOW()
-            WHERE municipality_id = %s AND resolution IS NULL
+            WHERE municipality_id = %s AND manual_check_required = TRUE AND resolution IS NULL
             """,
             (resolution, municipality_id,)
         )
