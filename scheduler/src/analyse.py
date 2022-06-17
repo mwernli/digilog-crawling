@@ -209,11 +209,11 @@ def _row_identifier(r: dict) -> str:
 
 
 def _determine_action_for_calibration_crawl(r: dict) -> str:
-    if r['settings_key'] != 'CALIBRATE_SLOWEST' and (
-            r['too_many_requests_count'] > 0 or
-            r['downloader_timeout_count'] / _sum_of_downloader_stats(r) >= 0.05
-    ):
-        return 'reduce_crawling_speed'
+    if r['too_many_requests_count'] > 0 or r['downloader_timeout_count'] / _sum_of_downloader_stats(r) >= 0.05:
+        if r['settings_key'] == 'CALIBRATE_SLOWEST':
+            return 'mark_as_not_crawlable'
+        else:
+            return 'reduce_crawling_speed'
     elif r['item_count'] <= 1:
         return 'mark_as_not_crawlable'
     else:
