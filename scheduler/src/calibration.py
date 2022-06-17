@@ -60,6 +60,6 @@ def _get_calibration_run_configuration(
 
 def _schedule_calibrations(ds, configuration, settings_key, tags):
     time_tag = datetime.datetime.utcnow().isoformat()
-    result = repository.schedule_municipality_calibration_runs(ds, configuration, tags + time_tag)
+    result = repository.schedule_municipality_calibration_runs(ds, configuration, tags + [time_tag])
     for m, queue_id in result.items():
         repository.insert_new_municipality_calibration(ds, m.id, queue_id, settings_key)
