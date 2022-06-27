@@ -10,7 +10,7 @@ from urllib3.util import parse_url
 import repository
 from datasource import DataSource
 from decorators import transaction
-from model import CalibrationRun, Municipality
+from model import CalibrationRun, Municipality, UrlCheck, UrlCheckResult
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +105,7 @@ def analyse_runs_with_manual_check(ds: DataSource, limit: Optional[int]):
         other_issues_count = 0
         connection_error_count = 0
         with Pool(5) as p:
-            results = p.map(_check_url, municipalities)
+            results = p.map(_check_url_after_calibration, municipalities)
         for result in results:
             m = result['municipality']
             if 'urlChain' in result:
@@ -131,7 +131,60 @@ def analyse_runs_with_manual_check(ds: DataSource, limit: Optional[int]):
         raise e
 
 
-def _check_url(municipality: Municipality) -> dict:
+@transaction
+def check_urls(ds: DataSource, limit: Optional[int], not_checked_since_days: int, max_attempts: int):
+    logger.info(
+        f'analysing URLs with not_checked_since_days={not_checked_since_days}, '
+        f'max_attempts={max_attempts} and limit={limit}'
+    )
+    try:
+        urls_to_check = repository.get_urls_to_check(ds, limit, not_checked_since_days, max_attempts)
+        logger.info(f'found {len(urls_to_check)} URLs to check.')
+        with Pool(5) as p:
+            results = p.map(_regular_url_check, urls_to_check)
+        for result in results:
+            logger.info(f'processing result {result}')
+            repository.update_url_check_result(ds, result)
+            if result.url_changed() or result.too_many_attempts(max_attempts):
+                repository.update_municipality_after_url_check(
+                    ds,
+                    result.municipality_id,
+                    result.updated_url,
+                    result.too_many_attempts(max_attempts),
+                )
+
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+
+def _regular_url_check(check_entry: UrlCheck) -> UrlCheckResult:
+    parsed_url = parse_url(check_entry.url)
+    if parsed_url.scheme is None:
+        updated_url = 'http://' + parsed_url.url
+    else:
+        updated_url = parsed_url.url
+    updated_log = f' (originally {check_entry.url})' if updated_url != check_entry.url else ''
+    logger.info(f'Checking {updated_url}{updated_log}')
+    try:
+        chain = _check_url_rec([updated_url])
+        if len(chain) == 1:
+            outcome = 'OK'
+        else:
+            outcome = 'REDIRECT'
+        return UrlCheckResult(check_entry.municipality_id, check_entry.url, chain[-1], outcome, 1)
+    except Exception as e:
+        logger.error(f'Error "{e}" while querying URL {updated_url} for municipality {check_entry.municipality_id}')
+        return UrlCheckResult(
+            check_entry.municipality_id,
+            check_entry.url,
+            updated_url,
+            'ERROR',
+            (check_entry.attempts or 0) + 1,
+        )
+
+
+def _check_url_after_calibration(municipality: Municipality) -> dict:
     parsed_url = parse_url(municipality.url)
     if parsed_url.scheme is None:
         url = 'http://' + parsed_url.url

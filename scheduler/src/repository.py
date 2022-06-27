@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 from typing import List, Dict, Optional
@@ -5,7 +6,7 @@ from typing import List, Dict, Optional
 from bson.objectid import ObjectId
 
 from datasource import DataSource
-from model import Municipality, CalibrationRun
+from model import Municipality, CalibrationRun, UrlCheck, UrlCheckResult
 
 logger = logging.getLogger(__name__)
 
@@ -233,6 +234,16 @@ def set_do_not_crawl(ds: DataSource, municipality_id: int, do_not_crawl: bool):
         )
 
 
+def update_municipality_after_url_check(ds: DataSource, municipality_id: int, url: str, do_not_crawl: bool):
+    with ds.postgres_cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE municipality SET url = %s, do_not_crawl = %s
+            WHERE id = %s
+            """,
+            (url, do_not_crawl, municipality_id)
+        )
+
 def get_crawl_stats(ds: DataSource, stats_id: str) -> dict:
     mongo_stats_id = ObjectId(stats_id)
     result = ds.mongodb.crawlstats.find_one({"_id": mongo_stats_id})
@@ -298,3 +309,50 @@ def update_manual_calibration_resolution(ds: DataSource, municipality_id: int, r
             """,
             (resolution, municipality_id,)
         )
+
+
+def get_urls_to_check(
+    ds: DataSource,
+    limit: Optional[int],
+    not_checked_since_days: int,
+    max_attempts: int,
+) -> List[UrlCheck]:
+    limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
+    thirty_days_ago = datetime.datetime.today() - datetime.timedelta(days=not_checked_since_days)
+    with ds.postgres_cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT m.id, m.url, c.last_check, c.outcome, c.attempts
+            FROM municipality AS m
+            LEFT JOIN url_check c ON c.url = m.url
+            WHERE (last_check IS NULL OR last_check < %s OR (outcome = 'ERROR' AND attempts < %s))
+            AND m.url <> ''
+            AND m.do_not_crawl = FALSE
+            ORDER BY last_check NULLS FIRST 
+            {limit_query}
+            """,
+            (thirty_days_ago, max_attempts),
+        )
+        return [UrlCheck(r.id, r.url, r.last_check, r.outcome, r.attempts) for r in cursor.fetchall()]
+
+
+def update_url_check_result(ds: DataSource, result: UrlCheckResult):
+    with ds.postgres_cursor() as cursor:
+        now = datetime.datetime.utcnow()
+        _update_url_check_result(cursor, result.original_url, now, result.outcome, result.attempts)
+        if result.url_changed():
+            _update_url_check_result(cursor, result.updated_url, now, result.outcome, result.attempts)
+
+
+def _update_url_check_result(cursor, url, last_check, outcome, attempts):
+    cursor.execute(
+        """
+        INSERT INTO url_check (url, last_check, outcome, attempts) 
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (url) DO UPDATE SET
+        last_check = excluded.last_check,
+        outcome = excluded.outcome,
+        attempts = excluded.attempts
+        """,
+        (url, last_check, outcome, attempts),
+    )

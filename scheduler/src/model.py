@@ -1,3 +1,4 @@
+import datetime
 from collections import namedtuple
 from dataclasses import dataclass
 from typing import Optional
@@ -24,3 +25,27 @@ class CalibrationRun:
     stats_id: str
     calibration_id: int
     settings_key: str
+
+
+@dataclass(eq=True, frozen=True)
+class UrlCheck:
+    municipality_id: int
+    url: str
+    last_check: Optional[datetime.datetime]
+    outcome: Optional[str]
+    attempts: Optional[int]
+
+
+@dataclass(eq=True, frozen=True)
+class UrlCheckResult:
+    municipality_id: int
+    original_url: str
+    updated_url: str
+    outcome: str
+    attempts: int
+
+    def url_changed(self) -> bool:
+        return self.original_url != self.updated_url
+
+    def too_many_attempts(self, max_retries: int):
+        return self.outcome == 'ERROR' and self.attempts >= max_retries
