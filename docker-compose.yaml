@@ -45,7 +45,7 @@ services:
         tag: "flyway"
   
   mongo:
-    image: mongo:latest
+    image: mongo:5.0.9
     container_name: digilog-mongodb
     restart: always
     ports:
