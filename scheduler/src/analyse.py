@@ -89,11 +89,13 @@ def analyse_latest(ds: DataSource, limit: Optional[int]):
 def _get_slower_settings_key(key: str) -> str:
     match key:
         case 'CALIBRATE':
-            return 'CALIBRATE_MEDIUM_FAST'
+            # return 'CALIBRATE_MEDIUM_FAST'
+            return 'CALIBRATE_MEDIUM'
         case 'CALIBRATE_MEDIUM_FAST':
             return 'CALIBRATE_MEDIUM'
         case 'CALIBRATE_MEDIUM':
-            return 'CALIBRATE_MEDIUM_SLOW'
+            # return 'CALIBRATE_MEDIUM_SLOW'
+            return 'CALIBRATE_SLOW'
         case 'CALIBRATE_MEDIUM_SLOW':
             return 'CALIBRATE_SLOW'
         case _:
