@@ -40,7 +40,7 @@ class QueuedEntrySpider(scrapy.Spider):
 
     def closed(self, reason):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
-        status = QueueStatus.DONE if reason == 'finished' else QueueStatus.ERROR
+        status = QueueStatus.DONE if reason == 'finished' or reason == 'closespider_timeout' else QueueStatus.ERROR
         self.ds.postgres.update_queue_status(self.queue_entry.id, status, reason)
         self.ds.postgres.insert_crawl_status(self.crawl_id, QueueStatus.CRAWLED) if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, status)
         self.save_stats()
