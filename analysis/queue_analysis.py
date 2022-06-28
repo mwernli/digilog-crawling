@@ -32,13 +32,14 @@ def process_queue():
 		with DataAnalysisContext(analysis_type='queued', logger=logger) as da:
 			pending_crawls_exist = da.check_for_updates()
 			if pending_crawls_exist:
-				da.logger.info('starting analysis of crawl {da.crawl_id}')
+				# da.logger.info('starting analysis of crawl {da.crawl_id}')
+				print('starting analysis of crawl {da.crawl_id}')
 				da.run_analysis()
 			else:
 				sleep(5)	
 				if counter == 0:
-					da.logger.info('Waiting for crawls to analyze')
-		
+					# da.logger.info('Waiting for crawls to analyze')
+					pass
 				counter = (counter + 1) % 12		
 
 def main():
