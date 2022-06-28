@@ -7,7 +7,7 @@ from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from spaczz.matcher import FuzzyMatcher
 from urllib3.util import parse_url
 
-from ..DataSource import DataSource
+from ..DataSource import DataSource, QueueStatus
 from ..common import stats_to_nested_dict
 from ..items import RawItem
 
@@ -67,7 +67,7 @@ class PointerCrawlSpider(scrapy.Spider):
 
     def closed(self, reason):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
-        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLED')
+        self.ds.postgres.insert_crawl_status(self.crawl_id, QueueStatus.CRAWLED) if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, QueueStatus.ERROR)
         self.save_stats()
         self.ds.close()
 

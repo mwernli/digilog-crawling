@@ -30,6 +30,7 @@ class QueueStatus(Enum):
     IN_PROGRESS = 'IN_PROGRESS'
     DONE = 'DONE'
     ERROR = 'ERROR'
+    CRAWLED = 'CRAWLED'
 
 
 def get_env_str(name: str) -> str:
