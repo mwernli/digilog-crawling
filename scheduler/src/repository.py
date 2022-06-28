@@ -28,7 +28,7 @@ def get_default_settings_by_key(ds: DataSource, settings_key: str) -> dict:
 
 def municipalities_with_urls(ds: DataSource, limit: Optional[int], uncalibrated_only: bool) -> List[Municipality]:
     with ds.postgres_cursor() as cursor:
-        limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
+        limit_query = _limit_query(limit)
         uncalibrated_only_query = """
             AND recommended_settings IS NULL
             AND NOT EXISTS (
@@ -102,7 +102,7 @@ def schedule_municipality_calibration_runs(ds: DataSource, configuration: Dict[M
 
 
 def get_finished_calibration_runs(ds: DataSource, limit: Optional[int], tags: List[str]) -> List[CalibrationRun]:
-    limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
+    limit_query = _limit_query(limit)
     with ds.postgres_cursor() as cursor:
         cursor.execute(
             f"""
@@ -146,7 +146,7 @@ def get_finished_calibration_runs(ds: DataSource, limit: Optional[int], tags: Li
 
 
 def get_latest_calibration_runs_to_analyse(ds: DataSource, limit: Optional[int]) -> List[CalibrationRun]:
-    limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
+    limit_query = _limit_query(limit)
     with ds.postgres_cursor() as cursor:
         cursor.execute(
             f"""
@@ -244,6 +244,7 @@ def update_municipality_after_url_check(ds: DataSource, municipality_id: int, ur
             (url, do_not_crawl, municipality_id)
         )
 
+
 def get_crawl_stats(ds: DataSource, stats_id: str) -> dict:
     mongo_stats_id = ObjectId(stats_id)
     result = ds.mongodb.crawlstats.find_one({"_id": mongo_stats_id})
@@ -259,7 +260,7 @@ def get_multiple_crawl_stats(ds: DataSource, stats_ids: List[str]) -> dict[str, 
 
 
 def get_calibrations_with_manual_check_required(ds: DataSource, limit: Optional[int]) -> List[Municipality]:
-    limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
+    limit_query = _limit_query(limit)
     with ds.postgres_cursor() as cursor:
         cursor.execute(
             f"""
@@ -317,7 +318,7 @@ def get_urls_to_check(
     not_checked_since_days: int,
     max_attempts: int,
 ) -> List[UrlCheck]:
-    limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
+    limit_query = _limit_query(limit)
     thirty_days_ago = datetime.datetime.today() - datetime.timedelta(days=not_checked_since_days)
     with ds.postgres_cursor() as cursor:
         cursor.execute(
@@ -356,3 +357,7 @@ def _update_url_check_result(cursor, url, last_check, outcome, attempts):
         """,
         (url, last_check, outcome, attempts),
     )
+
+
+def _limit_query(limit: Optional[int]):
+    return f'LIMIT {limit}' if limit is not None and limit > 0 else ''
