@@ -1,13 +1,16 @@
 import datetime
 import logging
+from multiprocessing import Pool
 from typing import Optional, List, Dict
 
 import pandas as pd
+import requests
+from urllib3.util import parse_url
 
 import repository
 from datasource import DataSource
 from decorators import transaction
-from model import CalibrationRun, Municipality
+from model import CalibrationRun, Municipality, UrlCheck, UrlCheckResult
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +23,9 @@ def analyse_all_calibration_runs_to_file(ds: DataSource, output_file: str, limit
     try:
         calibration_runs = repository.get_finished_calibration_runs(ds, limit, tags)
         logger.info(f'found {len(calibration_runs)} crawls to process')
+        if len(calibration_runs) == 0:
+            logger.info(f'no crawls found, terminating.')
+            return
         rows = _get_calibration_run_stats(ds, calibration_runs)
         logger.info(f'done, saving to csv file {output_file}')
         df = pd.DataFrame(rows.values())
@@ -64,7 +70,8 @@ def analyse_latest(ds: DataSource, limit: Optional[int]):
 
         logger.info(f'found {len(reduce_crawling_speed)} municipalities for which to reduce crawling speed')
         to_schedule = {m: _load_settings(ds, r['settings_key']) for (m, r) in reduce_crawling_speed.items()}
-        scheduled = repository.schedule_municipality_calibration_runs(ds, to_schedule, ['SPEED_REDUCED', 'AUTO'])
+        tags = ['SPEED_REDUCED', 'AUTO', datetime.datetime.utcnow().isoformat()]
+        scheduled = repository.schedule_municipality_calibration_runs(ds, to_schedule, tags)
         for m, queue_id in scheduled.items():
             settings_key = rows[m]['settings_key']
             old_calibration_id = rows[m]['calibration_id']
@@ -86,6 +93,135 @@ def analyse_latest(ds: DataSource, limit: Optional[int]):
         raise e
 
 
+@transaction
+def analyse_runs_with_manual_check(ds: DataSource, limit: Optional[int]):
+    logger.info(
+        f'analysing municipalities with manual check requirement, limit={limit}'
+    )
+    try:
+        municipalities = repository.get_calibrations_with_manual_check_required(ds, limit)
+        logger.info(f'found {len(municipalities)} municipalities for manual checking')
+        redirect_count = 0
+        other_issues_count = 0
+        connection_error_count = 0
+        with Pool(5) as p:
+            results = p.map(_check_url_after_calibration, municipalities)
+        for result in results:
+            m = result['municipality']
+            if 'urlChain' in result:
+                uc = result['urlChain']
+                if len(uc) > 1:
+                    redirect_count += 1
+                    logger.info(f'detected redirect for {m.id} {m.name_de} from {m.url} to {uc[-1]}, updating')
+                    repository.update_url_after_manual_check(ds, m.id, uc[-1])
+                else:
+                    other_issues_count += 1
+                    logger.info(f'no issue with url of {m} detected')
+                    repository.update_manual_calibration_resolution(ds, m.id, 'NO_ISSUE_DETECTED')
+            else:
+                connection_error_count += 1
+                logger.warning(f'detected connection issue for {m}')
+                repository.update_manual_calibration_resolution(ds, m.id, 'CONNECTION_ISSUE')
+        logger.info(f'detected {redirect_count} redirections, '
+                    f'{connection_error_count} connection issues '
+                    f'and {other_issues_count} urls without issues.')
+
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+
+@transaction
+def check_urls(ds: DataSource, limit: Optional[int], not_checked_since_days: int, max_attempts: int):
+    logger.info(
+        f'analysing URLs with not_checked_since_days={not_checked_since_days}, '
+        f'max_attempts={max_attempts} and limit={limit}'
+    )
+    try:
+        urls_to_check = repository.get_urls_to_check(ds, limit, not_checked_since_days, max_attempts)
+        logger.info(f'found {len(urls_to_check)} URLs to check.')
+        with Pool(5) as p:
+            results = p.map(_regular_url_check, urls_to_check)
+        for result in results:
+            logger.info(f'processing result {result}')
+            repository.update_url_check_result(ds, result)
+            if result.url_changed() or result.too_many_attempts(max_attempts):
+                repository.update_municipality_after_url_check(
+                    ds,
+                    result.municipality_id,
+                    result.updated_url,
+                    result.too_many_attempts(max_attempts),
+                )
+
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+
+def _regular_url_check(check_entry: UrlCheck) -> UrlCheckResult:
+    parsed_url = parse_url(check_entry.url)
+    if parsed_url.scheme is None:
+        updated_url = 'http://' + parsed_url.url
+    else:
+        updated_url = parsed_url.url
+    updated_log = f' (originally {check_entry.url})' if updated_url != check_entry.url else ''
+    logger.info(f'Checking {updated_url}{updated_log}')
+    try:
+        chain = _check_url_rec([updated_url])
+        if len(chain) == 1:
+            outcome = 'OK'
+        else:
+            outcome = 'REDIRECT'
+        return UrlCheckResult(check_entry.municipality_id, check_entry.url, chain[-1], outcome, 1)
+    except Exception as e:
+        logger.error(f'Error "{e}" while querying URL {updated_url} for municipality {check_entry.municipality_id}')
+        return UrlCheckResult(
+            check_entry.municipality_id,
+            check_entry.url,
+            updated_url,
+            'ERROR',
+            (check_entry.attempts or 0) + 1,
+        )
+
+
+def _check_url_after_calibration(municipality: Municipality) -> dict:
+    parsed_url = parse_url(municipality.url)
+    if parsed_url.scheme is None:
+        url = 'http://' + parsed_url.url
+    else:
+        url = parsed_url
+    logger.info(f'querying municipality {municipality.name_de} with url {url}')
+    try:
+        chain = _check_url_rec([url])
+        return {
+            'municipality': municipality,
+            'urlChain': chain,
+        }
+    except Exception as e:
+        return {
+            'municipality': municipality,
+            'error': e,
+        }
+
+
+def _check_url_rec(chain: List[str]):
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                      'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36'
+    }
+    try:
+        url = chain[-1]
+        response = requests.get(url, timeout=5, allow_redirects=False, verify=True, headers=headers)
+        if response.is_permanent_redirect and len(chain) < 10:
+            chain.append(response.next.url)
+            return _check_url_rec(chain)
+        else:
+            return chain
+    except Exception as e:
+        logger.error(e)
+        raise e
+
+
 def _get_slower_settings_key(key: str) -> str:
     match key:
         case 'CALIBRATE':
@@ -96,6 +232,8 @@ def _get_slower_settings_key(key: str) -> str:
             return 'CALIBRATE_MEDIUM_SLOW'
         case 'CALIBRATE_MEDIUM_SLOW':
             return 'CALIBRATE_SLOW'
+        case 'CALIBRATE_SLOW':
+            return 'CALIBRATE_SLOWEST'
         case _:
             raise ValueError(f'No slower calibration method than {key} configured')
 
@@ -124,11 +262,11 @@ def _row_identifier(r: dict) -> str:
 
 
 def _determine_action_for_calibration_crawl(r: dict) -> str:
-    if r['settings_key'] != 'CALIBRATE_SLOW' and (
-            r['too_many_requests_count'] > 0 or
-            r['downloader_timeout_count'] / _sum_of_downloader_stats(r) >= 0.05
-    ):
-        return 'reduce_crawling_speed'
+    if r['too_many_requests_count'] > 0 or r['downloader_timeout_count'] / _sum_of_downloader_stats(r) >= 0.05:
+        if r['settings_key'] == 'CALIBRATE_SLOWEST':
+            return 'mark_as_not_crawlable'
+        else:
+            return 'reduce_crawling_speed'
     elif r['item_count'] <= 1:
         return 'mark_as_not_crawlable'
     else:
