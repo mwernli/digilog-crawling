@@ -29,7 +29,7 @@ def get_default_settings_by_key(ds: DataSource, settings_key: str) -> dict:
 def municipalities_with_urls(ds: DataSource, limit: Optional[int], uncalibrated_only: bool) -> List[Municipality]:
     with ds.postgres_cursor() as cursor:
         limit_query = f'LIMIT {limit}' if limit is not None and limit > 0 else ''
-        uncalibrated_only = """
+        uncalibrated_only_query = """
             AND recommended_settings IS NULL
             AND NOT EXISTS (
                 SELECT 1 FROM municipality_calibration
@@ -40,7 +40,7 @@ def municipalities_with_urls(ds: DataSource, limit: Optional[int], uncalibrated_
             f"""
             SELECT id, name_de, url, population, area_sqm FROM municipality m
             WHERE m.url <> '' AND m.do_not_crawl = FALSE
-            {uncalibrated_only}
+            {uncalibrated_only_query}
             {limit_query}
             """
         )
