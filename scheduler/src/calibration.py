@@ -1,4 +1,3 @@
-import datetime
 import logging
 from typing import List, Dict, Optional
 
@@ -54,12 +53,14 @@ def _get_calibration_run_configuration(
         override_settings: dict,
 ) -> Dict[Municipality, dict]:
     default_settings = repository.get_default_settings_by_key(ds, settings_key)
-    settings = default_settings | override_settings
-    return {m: settings for m in municipalities}
+    result = {}
+    for m in municipalities:
+        settings = default_settings | override_settings
+        result[m] = settings
+    return result
 
 
 def _schedule_calibrations(ds, configuration, settings_key, tags):
-    time_tag = datetime.datetime.utcnow().isoformat()
-    result = repository.schedule_municipality_calibration_runs(ds, configuration, tags + [time_tag])
+    result = repository.schedule_municipality_calibration_runs(ds, configuration, tags)
     for m, queue_id in result.items():
         repository.insert_new_municipality_calibration(ds, m.id, queue_id, settings_key)

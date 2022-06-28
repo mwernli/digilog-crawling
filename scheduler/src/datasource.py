@@ -129,7 +129,6 @@ class DataConnectionProvider:
         self._dc.close()
         del self._dc
 
-
 def call(handler: Callable[[DataSource], R]) -> R:
     with DataConnectionProvider() as dc:
         with dc.postgres.connection as postgres_connection, dc.mongodb:
