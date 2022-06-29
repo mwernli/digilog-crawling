@@ -1,5 +1,6 @@
 import logging
 from typing import Optional, List
+from datetime import datetime
 
 from decorators import transaction
 from datasource import DataSource
@@ -23,6 +24,7 @@ def schedule_crawling_runs(
     try:
         to_crawl = repository.get_municipalities_to_crawl(ds, crawl_type, days_since_last_successful_crawl, limit)
         logger.info(f'found {len(to_crawl)} municipalities to crawl')
+        tags += ['AUTO', datetime.utcnow().isoformat()]
         repository.schedule_municipality_crawl(ds, to_crawl, crawl_type, tags)
     except Exception as e:
         logger.error(e)
