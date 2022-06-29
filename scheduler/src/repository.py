@@ -2,13 +2,108 @@ import datetime
 import json
 import logging
 from typing import List, Dict, Optional
-
+from psycopg2.extras import execute_values
 from bson.objectid import ObjectId
 
 from datasource import DataSource
-from model import Municipality, CalibrationRun, UrlCheck, UrlCheckResult
+from model import Municipality, CalibrationRun, UrlCheck, UrlCheckResult, MunicipalityToCrawl
 
 logger = logging.getLogger(__name__)
+
+
+def get_municipalities_to_crawl(
+    ds: DataSource,
+    crawl_type: str,
+    days: int,
+    limit: Optional[int],
+) -> List[MunicipalityToCrawl]:
+    limit_query = _limit_query(limit)
+    threshold = datetime.datetime.utcnow() - datetime.timedelta(days=days)
+    with ds.postgres_cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT m.id, m.url, dss.settings
+            FROM municipality m
+            JOIN default_scrapy_settings dss ON m.recommended_settings = dss.key
+            WHERE m.recommended_settings IS NOT NULL
+            AND m.do_not_crawl = FALSE
+            AND NOT EXISTS (
+                SELECT 1 FROM crawling_queue cq
+                WHERE cq.id IN (
+                    SELECT queue_id
+                    FROM municipality_to_queue_entry mq
+                    WHERE mq.municipality_id = m.id
+                ) AND cq.crawl_type = %s
+                AND cq.updated_at > %s
+                AND cq.status <> 'ERROR'
+            )
+            {limit_query}
+            """,
+            (crawl_type, threshold,)
+        )
+
+        return [MunicipalityToCrawl(r.id, r.url, r.settings) for r in cursor.fetchall()]
+
+
+def schedule_municipality_crawl(
+    ds: DataSource,
+    municipalities: List[MunicipalityToCrawl],
+    crawl_type: str,
+    tags: List[str],
+):
+    with ds.postgres_cursor() as cursor:
+        now = datetime.datetime.utcnow()
+        logger.info(f'inserting {len(municipalities)} crawls of type {crawl_type} and with tags {tags}')
+        result = execute_values(
+            cursor,
+            """
+            INSERT INTO crawling_queue (
+                top_url,
+                status,
+                priority,
+                inserted_at,
+                updated_at,
+                reason,
+                crawl_type,
+                scrapy_settings,
+                tags
+            ) VALUES %s
+            RETURNING id, top_url
+            """,
+            [
+                (
+                    m.url,
+                    'NEW',
+                    1,
+                    now,
+                    now,
+                    'auto-schedule',
+                    crawl_type,
+                    json.dumps(m.settings),
+                    tags
+                ) for m in municipalities
+            ],
+            fetch=True,
+        )
+        url_to_queue_id = {r.top_url: r.id for r in result}
+
+        connections = []
+        for m in municipalities:
+            try:
+                connections.append((m.municipality_id, url_to_queue_id[m.url]))
+            except KeyError:
+                logger.error(f'no queue id found for url {m.url}, municipality id {m.municipality_id}')
+
+        logger.info(f'inserting {len(connections)} municipalityId->queueId connections')
+
+        execute_values(
+            cursor,
+            """
+            INSERT INTO municipality_to_queue_entry (municipality_id, queue_id)    
+            VALUES %s
+            """,
+            connections,
+        )
 
 
 def get_default_settings_by_key(ds: DataSource, settings_key: str) -> dict:
