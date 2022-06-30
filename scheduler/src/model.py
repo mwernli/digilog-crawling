@@ -49,3 +49,10 @@ class UrlCheckResult:
 
     def too_many_attempts(self, max_retries: int):
         return self.outcome == 'ERROR' and self.attempts >= max_retries
+
+
+@dataclass(eq=True, frozen=True)
+class MunicipalityToCrawl:
+    municipality_id: int
+    url: str
+    settings: dict

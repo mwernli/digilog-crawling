@@ -43,21 +43,14 @@ class DataSource:
 
 
 class PostgresConnection:
-    def __init__(self, called_from_container: bool = True):
-        if called_from_container:
-            self.host = get_env_str_or('POSTGRES_SERVICE_HOST', 'digilog-postgres')
-            self.port = get_env_int_or('POSTGRES_SERVICE_PORT', 5432)
-            self.user = get_env_str_or('POSTGRES_USER', 'digilog')
-            self.password = get_env_str_or('POSTGRES_PASSWORD', 'password')
-            self.db = get_env_str_or('POSTGRES_DB', 'digilog')
-            self.schema = get_env_str_or('POSTGRES_DB', 'digilog')
-        else:
-            self.host = 'localhost'
-            self.port = 5500
-            self.user = 'digilog'
-            self.password = 'password'
-            self.db = 'digilog'
-            self.schema = 'digilog'
+    def __init__(self):
+        self.host = get_env_str_or('POSTGRES_SERVICE_HOST', 'localhost')
+        self.port = get_env_int_or('POSTGRES_SERVICE_PORT', 5500)
+        self.user = get_env_str_or('POSTGRES_USER', 'digilog')
+        self.password = get_env_str_or('POSTGRES_PASSWORD', 'password')
+        self.db = get_env_str_or('POSTGRES_DB', 'digilog')
+        self.schema = get_env_str_or('POSTGRES_DB', 'digilog')
+
         self.connection = self._connect()
 
     def _connect(self):
@@ -76,17 +69,12 @@ class PostgresConnection:
 
 
 class MongoDbConnection:
-    def __init__(self, called_from_container: bool = True):
-        if called_from_container:
-            self.host = get_env_str_or('MONGODB_SERVICE_HOST', 'digilog-mongodb')
-            self.port = get_env_int_or('MONGODB_SERVICE_PORT', 27017)
-            self.user = get_env_str_or('MONGODB_USER', 'root')
-            self.password = get_env_str_or('MONGODB_PASSWORD', 'mongopwd')
-        else:
-            self.host = 'localhost'
-            self.port = 5550
-            self.user = 'root'
-            self.password = 'mongopwd'
+    def __init__(self):
+        self.host = get_env_str_or('MONGODB_SERVICE_HOST', 'localhost')
+        self.port = get_env_int_or('MONGODB_SERVICE_PORT', 5550)
+        self.user = get_env_str_or('MONGODB_USER', 'root')
+        self.password = get_env_str_or('MONGODB_PASSWORD', 'mongopwd')
+
         self.connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
         self.client = MongoClient(self.connection_string)
         self.session = self.client.start_session()
@@ -108,12 +96,8 @@ R = TypeVar('R')
 
 class DataConnection:
     def __init__(self):
-        try:
-            container_network = not bool(int(os.environ['OUTSIDE_NETWORK']))
-        except KeyError:
-            container_network = True
-        self.postgres = PostgresConnection(container_network)
-        self.mongodb = MongoDbConnection(container_network)
+        self.postgres = PostgresConnection()
+        self.mongodb = MongoDbConnection()
 
     def close(self):
         self.postgres.close()
