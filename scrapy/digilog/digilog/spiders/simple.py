@@ -38,7 +38,7 @@ class SimpleSpider(scrapy.Spider):
     def closed(self, reason):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
         self.save_stats()
-        self.ds.postgres.insert_crawl_status(self.crawl_id, QueueStatus.CRAWLED) if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, QueueStatus.ERROR)
+        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLED') if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, 'ERROR')
         self.ds.close()
 
     def save_stats(self):
