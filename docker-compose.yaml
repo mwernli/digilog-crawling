@@ -161,27 +161,27 @@ services:
         fluentd-address: "localhost:24224"
         tag: "crawl-queue-processor"
 
-  queueprocessoranalysis:
-    build:
-      context: ./analysis/.
-      target: dev
-    image: gerbejon/analysis_queued:1.0
-    container_name: digilog-analysis-queue-processor
-    environment:
-      POSTGRES_SERVICE_HOST: digilog-postgres
-      POSTGRES_SERVICE_PORT: 5432
-      POSTGRES_PASSWORD: password
-      POSTGRES_USER: digilog
-      POSTGRES_DB: digilog
-      MONGODB_SERVICE_HOST: digilog-mongodb
-      MONGODB_SERVICE_PORT: 27017
-      MONGODB_PASSWORD: mongopwd
-      MONGODB_USER: root
-    entrypoint: ["python"]
-    command: ["/src/queue_analysis.py"]
-    restart: always
-    volumes:
-    - ./analysis:/src
+  # queueprocessoranalysis:
+  #   build:
+  #     context: ./analysis/.
+  #     target: dev
+  #   image: gerbejon/analysis_queued:1.0.1
+  #   container_name: digilog-analysis-queue-processor
+  #   environment:
+  #     POSTGRES_SERVICE_HOST: digilog-postgres
+  #     POSTGRES_SERVICE_PORT: 5432
+  #     POSTGRES_PASSWORD: password
+  #     POSTGRES_USER: digilog
+  #     POSTGRES_DB: digilog
+  #     MONGODB_SERVICE_HOST: digilog-mongodb
+  #     MONGODB_SERVICE_PORT: 27017
+  #     MONGODB_PASSWORD: mongopwd
+  #     MONGODB_USER: root
+  #   entrypoint: ["python"]
+  #   command: ["/src/queue_analysis.py"]
+  #   restart: always
+  #   volumes:
+  #   - ./analysis:/src
 
   scheduler:
     build:
