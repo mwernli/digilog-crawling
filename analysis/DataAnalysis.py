@@ -14,6 +14,7 @@ class IDataAnalysis(metaclass=ABCMeta):
 
 	def __init__(self, *args, **kwargs):
 		self.__name = 'IDataAnalysis'
+		self.crawl_id = None
 		try:
 			self.logger = kwargs['logger']
 		except:
@@ -28,9 +29,9 @@ class IDataAnalysis(metaclass=ABCMeta):
 		''' implement in child class '''
 
 	def close(self):
-		self.ds.client
+		self.ds.close()
 	
-	def get_logger():
+	def get_logger(self):
 		dir_path = os.path.dirname(os.path.realpath(__file__))
 		logfilename = os.path.join(dir_path, 'analyzer.log')
 		logger = logging.getLogger(__name__)
@@ -50,9 +51,10 @@ class IDataAnalysis(metaclass=ABCMeta):
 		self.crawlresults = [item for item in self.ds.mongo.db.simpleresults.find({'crawl_id': crawl_id})]
 		self.html_lengths_array = np.array([len(item['html']) for item in self.crawlresults])
 		if len(self.html_lengths_array) == 0:
-			logger.info('No results found for crawl {crawl_id}')
-			sys.exit()
+			self.logger.info('No results found for crawl {crawl_id}')
+			return 1
 		# self.max_html_lenght = np.quantile(len(self.html_lengths_array), 0.99)
+		return 0
 
 
 
@@ -60,7 +62,7 @@ class IDataAnalysis(metaclass=ABCMeta):
 		if not 'keywords' in self.ds.mongo.db.list_collection_names():
 			self.KEYWORDLIST = ['Umzug', 'Gesuch', 'Steuererklaerung', 'Anmeldung', 'ePayment', 'Heimtieranmeldung', 'Antrag', 'Passbestellung', 'online']
 			doc = {
-				'keywordlist': KEYWORDLIST,
+				'keywordlist': self.KEYWORDLIST,
 				'language': 'de'
 			}
 			self.ds.mongo.db.keywords.insert_one(doc)
@@ -164,7 +166,7 @@ class IDataAnalysis(metaclass=ABCMeta):
 	def get_crawl_loc_gov_data(self, crawl_id):
 		res = self.ds.postgres.get_loc_gov_data(crawl_id)
 		if res is None:
-			res = res = self.ds.postgres.get_loc_gov_data_alternative(crawl_id)
+			res = self.ds.postgres.get_loc_gov_data_alternative(crawl_id)
 		try:
 			loc_gov_id, loc_gov_url, loc_gov_nam = res
 			loc_gov_id = int(loc_gov_id)
@@ -173,7 +175,7 @@ class IDataAnalysis(metaclass=ABCMeta):
 			raise ValueError('Could not initialize object, no matching result in the repository for crawled homepage')
 		except TypeError:
 			raise TypeError('Could not initialize object, no matching result in the repository for crawled homepage')
-		return (None, None, None)
+		# return (None, None, None)
 
 
 
@@ -190,6 +192,7 @@ class AnalysisQueued(IDataAnalysis):
 
 	def __init__(self, *args, **kwargs):
 		super(AnalysisQueued, self).__init__(*args, **kwargs)
+		self.loc_gov_nam = None
 		self.logger.info(f'Setting up class "{self.__name}" analyzer')
 		# res = self.ds.postgres.get_loc_gov_data(self.crawl_id)
 		# if res is None:
@@ -212,7 +215,10 @@ class AnalysisQueued(IDataAnalysis):
 
 	def run_analysis(self):
 		self.loc_gov_id, self.loc_gov_url, self.loc_gov_nam = self.get_crawl_loc_gov_data(self.crawl_id)
-		self.load_mongo_crawl_results(self.crawl_id)
+		status = self.load_mongo_crawl_results(self.crawl_id)
+		if status == 1:
+			self.ds.postgres.insert_crawl_status(self.crawl_id, 'NO CRAWLING RESULTS FOUND')
+			return
 		self.check_analysis_requirements()
 		status = self.run_crawl_analysis()
 		if status == 0:
@@ -235,7 +241,10 @@ class AnalysisAll(IDataAnalysis):
 	def run_analysis(self):
 		self.ds.postgres.update_crawl_status(self.crawl_id, 'ANALYZING')
 		self.loc_gov_id, self.loc_gov_url, self.loc_gov_nam = self.get_crawl_loc_gov_data(self.crawl_id)
-		self.load_mongo_crawl_results(self.crawl_id)
+		status = self.load_mongo_crawl_results(self.crawl_id)
+		if status == 1:
+			self.ds.postgres.insert_crawl_status(self.crawl_id, 'NO CRAWLING RESULTS FOUND')
+			return
 		self.check_analysis_requirements()
 		status = self.run_crawl_analysis()
 		if status == 0:
@@ -256,7 +265,10 @@ class AnalysisSingle(IDataAnalysis):
 	def run_analysis(self):
 		self.ds.postgres.update_crawl_status(self.crawl_id, 'ANALYZING')
 		self.loc_gov_id, self.loc_gov_url, self.loc_gov_nam = self.get_crawl_loc_gov_data(self.crawl_id)
-		self.load_mongo_crawl_results(self.crawl_id)
+		status = self.load_mongo_crawl_results(self.crawl_id)
+		if status == 1:
+			self.ds.postgres.insert_crawl_status(self.crawl_id, 'NO CRAWLING RESULTS FOUND')
+			return
 		self.check_analysis_requirements()
 		status = self.run_crawl_analysis()
 		if status == 0:
@@ -278,7 +290,7 @@ class AnalysisFactory:
 				return instance
 		if analysis_type == 'all':
 			return AnalysisAll(*args, **kwargs)
-		if analyis_type == 'single':
+		if analysis_type == 'single':
 			return AnalysisSingle(*args, **kwargs)
 		raise ValueError('Invalid analysis_type value')
 

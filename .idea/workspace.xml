@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e25dd859-c3a5-4ce1-b044-0dabf8c786aa" name="Changes" comment="" />
+    <list default="true" id="e25dd859-c3a5-4ce1-b044-0dabf8c786aa" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/analysis/DataAnalysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/DataAnalysis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/analysis_queued/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/analysis_queued/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/analysis/tools.py" beforeDir="false" afterPath="$PROJECT_DIR$/analysis/tools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yaml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -21,21 +26,20 @@
       <filtered-out-file-type name="COMMIT_BY_MESSAGE" />
     </file-type-list>
   </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
   <component name="ProjectId" id="21M8mpUSE3RdAFItPfa9ux8WsJp" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../digilog/python-digilog-ssh" />
-    <property name="node.js.detected.package.eslint" value="true" />
-    <property name="node.js.detected.package.tslint" value="true" />
-    <property name="node.js.selected.package.eslint" value="(autodetect)" />
-    <property name="node.js.selected.package.tslint" value="(autodetect)" />
-  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "WebServerToolWindowFactoryState": "true",
+    "nodejs_package_manager_path": "npm"
+  }
+}]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -45,6 +49,7 @@
       <option name="presentableId" value="Default" />
       <updated>1637739757446</updated>
       <workItem from="1637739761208" duration="1445000" />
+      <workItem from="1658738437987" duration="20000" />
     </task>
     <servers />
   </component>
