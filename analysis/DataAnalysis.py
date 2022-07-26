@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from DataSourceSlim import DataSourceSlim
+from DataSourceSlim import DataSourceSlim, ProcessStatus
 import spacy
 import logging
 import os
@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup
 from spaczz.matcher import FuzzyMatcher
 import datetime
 import pandas as pd
+from enum import Enum
+
 
 
 class IDataAnalysis(metaclass=ABCMeta):
@@ -217,12 +219,12 @@ class AnalysisQueued(IDataAnalysis):
 		self.loc_gov_id, self.loc_gov_url, self.loc_gov_nam = self.get_crawl_loc_gov_data(self.crawl_id)
 		status = self.load_mongo_crawl_results(self.crawl_id)
 		if status == 1:
-			self.ds.postgres.insert_crawl_status(self.crawl_id, 'NO CRAWLING RESULTS FOUND')
+			self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.ANALYSIS_WARNING__NO_CRAWLING_RESULTS_FOUND)
 			return
 		self.check_analysis_requirements()
 		status = self.run_crawl_analysis()
 		if status == 0:
-			self.ds.postgres.insert_crawl_status(self.crawl_id, 'ANALYZED')
+			self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.ANALYZED)
 		
 
 
@@ -239,16 +241,16 @@ class AnalysisAll(IDataAnalysis):
 		pass
 
 	def run_analysis(self):
-		self.ds.postgres.update_crawl_status(self.crawl_id, 'ANALYZING')
+		self.ds.postgres.update_crawl_status(self.crawl_id, ProcessStatus.ANALYZING)
 		self.loc_gov_id, self.loc_gov_url, self.loc_gov_nam = self.get_crawl_loc_gov_data(self.crawl_id)
 		status = self.load_mongo_crawl_results(self.crawl_id)
 		if status == 1:
-			self.ds.postgres.insert_crawl_status(self.crawl_id, 'NO CRAWLING RESULTS FOUND')
+			self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.ANALYSIS_WARNING__NO_CRAWLING_RESULTS_FOUND)
 			return
 		self.check_analysis_requirements()
 		status = self.run_crawl_analysis()
 		if status == 0:
-			self.ds.postgres.insert_crawl_status(self.crawl_id, 'ANALYZED')
+			self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.ANALYZED)
 		
 
 
@@ -263,16 +265,16 @@ class AnalysisSingle(IDataAnalysis):
 		self.run_analysis()
 
 	def run_analysis(self):
-		self.ds.postgres.update_crawl_status(self.crawl_id, 'ANALYZING')
+		self.ds.postgres.update_crawl_status(self.crawl_id, ProcessStatus.ANALYZING)
 		self.loc_gov_id, self.loc_gov_url, self.loc_gov_nam = self.get_crawl_loc_gov_data(self.crawl_id)
 		status = self.load_mongo_crawl_results(self.crawl_id)
 		if status == 1:
-			self.ds.postgres.insert_crawl_status(self.crawl_id, 'NO CRAWLING RESULTS FOUND')
+			self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.ANALYSIS_WARNING__NO_CRAWLING_RESULTS_FOUND)
 			return
 		self.check_analysis_requirements()
 		status = self.run_crawl_analysis()
 		if status == 0:
-			self.ds.postgres.insert_crawl_status(self.crawl_id, 'ANALYZED')
+			self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.ANALYZED)
 
 
 

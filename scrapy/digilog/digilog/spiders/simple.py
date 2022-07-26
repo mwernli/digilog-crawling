@@ -4,7 +4,7 @@ import scrapy
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from urllib3.util import parse_url
 
-from ..DataSource import DataSource, QueueStatus
+from ..DataSource import DataSource, QueueStatus, ProcessStatus
 from ..common import stats_to_nested_dict
 from ..items import RawItem
 
@@ -38,7 +38,7 @@ class SimpleSpider(scrapy.Spider):
     def closed(self, reason):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
         self.save_stats()
-        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLED') if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, 'ERROR')
+        self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.CRAWLED) if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.CRAWL_ERROR)
         self.ds.close()
 
     def save_stats(self):

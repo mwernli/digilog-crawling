@@ -32,36 +32,42 @@ import os
 from DataSourceSlim import *
 
 class MongoDbConnectionKubernetes(MongoDbConnection):
-	def __init__(self):
-		super().__init__()
+    def __init__(self):
+        super().__init__()
 
-	def mongo(self):
-		self.host = 'localhost'
-		self.port = 27017
-		self.user = 'mongoDbUser'
-		# self.user = 'bW9uZ29EYlVzZXI='
-		self.password = 'mongoDbPass'
-		# self.password = 'bW9uZ29EYlBhc3M='
-		self.connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
-		self.client = MongoClient(self.connection_string)
-		self.dn = self.client.digilog
+    def mongo(self):
+        self.host = 'localhost'
+        self.port = 27017
+        self.user = 'mongoDbUser'
+        # self.user = 'bW9uZ29EYlVzZXI='
+        self.password = 'mongoDbPass'
+        # self.password = 'bW9uZ29EYlBhc3M='
+        self.connection_string = 'mongodb://{}:{}@{}:{}'.format(self.user, self.password, self.host, self.port)
+        self.client = MongoClient(self.connection_string)
+        self.db = self.client.digilog
 
 
 class PosrgresDbConnectionKubernetes(PostresDbConnection):
-	def __init__(self):
-		super().__init__()
+    def __init__(self):
+        super().__init__()
 
-	def postgres(self):
-		self.host = 'localhost'
-		self.port = 5432
-		self.user = 'digilog'
-		self.password = 'digilogDbPass'
-		self.db = 'digilog'
-		self.schema = 'digilog'
-		self.connection = psycopg2.connect(
-			dbname=self.db,
-			user=self.user,
-			password=self.password,
-			host=self.host,
-			port=self.port
-		)
+    def postgres(self):
+        self.host = 'localhost'
+        self.port = 5432
+        self.user = 'digilog'
+        self.password = 'digilogDbPass'
+        self.db = 'digilog'
+        self.schema = 'digilog'
+        self.connection = psycopg2.connect(
+            dbname=self.db,
+            user=self.user,
+            password=self.password,
+            host=self.host,
+            port=self.port
+        )
+
+
+if __name__ == '__main__':
+    mng = MongoDbConnectionKubernetes()
+    mng.mongo()
+    print(mng.db.list_collection_names())

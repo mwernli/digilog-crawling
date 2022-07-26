@@ -33,6 +33,16 @@ class QueueStatus(Enum):
     CRAWLED = 'CRAWLED'
 
 
+class ProcessStatus(Enum):
+    CRAWLING = 1
+    CRAWLED = 2
+    CRAWL_ERROR = 3
+    ANALYZING = 4
+    ANALYZED = 5
+    ANALYSIS_ERROR = 6
+    ANALYSIS_WARNING__NO_CRAWLING_RESULTS_FOUND = 7
+
+
 def get_env_str(name: str) -> str:
     try:
         return os.environ[name]
