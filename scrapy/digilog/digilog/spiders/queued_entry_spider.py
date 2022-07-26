@@ -1,7 +1,7 @@
 import scrapy
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 
-from ..DataSource import DataSource, QueueStatus
+from ..DataSource import DataSource, QueueStatus, ProcessStatus
 from ..common import stats_to_nested_dict, get_domain_and_url
 from ..items import RawItem
 
@@ -20,7 +20,7 @@ class QueuedEntrySpider(scrapy.Spider):
         self.allowed_domains = [self.domain]
 
         self.crawl_id = self.ds.postgres.insert_crawl(self.url, self.name)
-        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLING')
+        self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.CRAWLING)
         self.logger.info(f'Inserted new crawl with URL {self.url}, ID [{self.crawl_id}]')
 
     def start_requests(self):
@@ -42,7 +42,7 @@ class QueuedEntrySpider(scrapy.Spider):
         self.logger.info('Closing spider with reason: "{}"'.format(reason))
         status = QueueStatus.DONE if reason == 'finished' or reason == 'closespider_timeout' else 'ERROR'
         self.ds.postgres.update_queue_status(self.queue_entry.id, status, reason)
-        self.ds.postgres.insert_crawl_status(self.crawl_id, 'CRAWLED') if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, status)
+        self.ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.CRAWLED) if reason == 'finished' else ds.postgres.insert_crawl_status(self.crawl_id, ProcessStatus.CRAWL_ERROR)
         self.save_stats()
         self.ds.close()
 
