@@ -165,7 +165,7 @@ services:
     build:
       context: ./analysis/.
       target: dev
-    image: gerbejon/analysis_queued:1.0.1
+    image: gerbejon/analysis_queued:1.0.3
     container_name: digilog-analysis-queue-processor
     environment:
       POSTGRES_SERVICE_HOST: digilog-postgres

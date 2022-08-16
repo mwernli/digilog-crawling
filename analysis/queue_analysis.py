@@ -6,8 +6,6 @@ import sys
 import logging
 
 
-# os.environ['OUTSIDE_NETWORK'] = '1'
-
 def get_logger():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     logfilename = os.path.join(dir_path, 'analyzer.log')
@@ -21,7 +19,6 @@ def get_logger():
 
 
 def parse_opt():
-    print(sys.argv[1:])
     opts, args = getopt.getopt(sys.argv[1:], 'o', ['outside_network', 'mode', 'port'])
     for opt, arg in opts:
         if opt in ['-o', '--outside_network']:
@@ -40,14 +37,15 @@ def process_queue():
             pending_crawls_exist = da.check_for_updates()
             if pending_crawls_exist:
                 # da.logger.info('starting analysis of crawl {da.crawl_id}')
-                print('starting analysis of crawl {da.crawl_id}')
-                da.run_analysis()
+                print(f'starting analysis of crawl {da.crawl_id}')
+                da.do_job()
             else:
                 sleep(5)
                 if counter == 0:
                     # da.logger.info('Waiting for crawls to analyze')
                     pass
                 counter = (counter + 1) % 12
+
 
 
 def main():
