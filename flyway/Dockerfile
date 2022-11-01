@@ -7,7 +7,8 @@ CMD ["flyway \
 -password=${POSTGRES_PASSWORD} \
 -schemas=${POSTGRES_DB} \
 -baselineOnMigrate=true \
-migrate"]
+migrate \
+-ignoreIgnoredMigrations=true"]
 
 FROM dev AS packaged
 

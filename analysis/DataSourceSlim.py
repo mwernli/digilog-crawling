@@ -17,7 +17,7 @@ if 'OUTSIDE_NETWORK' not in os.environ.keys():
         if answer in ['0', '1']:
             os.environ['OUTSIDE_NETWORK'] = answer
             break
-if os.environ['OUTSIDE_NETWORK'] == '1':
+if os.environ['OUTSIDE_NETWORK'] == '1' and 'LOCAL_NETWORK' not in os.environ.keys():
     while True:
         answer = input('docker network (d) / kubernetes (k)?')
         if answer in ['d', 'k']:
@@ -205,6 +205,33 @@ class PostresDbConnection:
                     """
                     # (crawl_id, status)
                 )
+
+    def insert_email_address(self, last_crawl: int, municipality_id: int, email: str):
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    UPDATE municipality_email
+                    SET last_crawl = %s, email= %s
+                    WHERE municipality_id = %s
+                    RETURNING municipality_id;
+                    """, (last_crawl, email, municipality_id)
+                )
+                result = cursor.fetchone()
+        if not result:
+            with self.connection as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        f"""
+                        INSERT INTO municipality_email (municipality_id, last_crawl, email)
+                        VALUES (%s, %s, %s)
+                        """, (municipality_id, last_crawl, email)
+                    )
+                    # INSERT OR IGNORE INTO municipality_email (municipality_id, last_crawl, email)
+                    # VALUES ({municipality_id}, {last_crawl}, {email})
+                    # WHERE municipality_id = {municipality_id}
+                    # ON CONFLICT (municipality_id)
+                    # DO UPDATE SET last_crawl={last_crawl}, email={email}
     def get_summary_crawl_status(self):
         with self.connection as connection:
             with connection.cursor() as cursor:
