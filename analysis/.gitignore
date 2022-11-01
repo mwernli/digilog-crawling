@@ -1,2 +1,6 @@
 run_analysis_parallel.sh
 run_analysis_test.sh
+/data/*
+meeting_phd.py
+workbench.py
+statistics.py
