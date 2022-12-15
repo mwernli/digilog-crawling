@@ -12,7 +12,7 @@ import datetime
 import numpy as np
 import subprocess
 import argparse
-sys.path.insert(1,'/home/gerj/Documents/GitHub/digilog-crawling/analysis/')
+sys.path.insert(1,'../analysis/')
 from DataSourceSlim import DataSourceSlim
 
 logging.NOTSET = 1
@@ -51,7 +51,7 @@ def do_logging(secs):
 def run_crawling_simple(munic):
     url, name = munic
     # start = datetime.datetime.now()
-    subprocess.run(['sudo','sh', './simple_crawl.sh', '-i', url, ' >', '/dev/null'])
+    subprocess.run(['sudo','sh', './simple_crawl_4.sh', '-i', url, ' >', '/dev/null'])
     # duration_crawling = (datetime.datetime.now() - start).seconds
     # result = ds.mongo.db.crawlingtimes.insert_one({
     #     'url':url,
