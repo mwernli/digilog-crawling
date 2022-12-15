@@ -232,6 +232,23 @@ class PostresDbConnection:
                     # WHERE municipality_id = {municipality_id}
                     # ON CONFLICT (municipality_id)
                     # DO UPDATE SET last_crawl={last_crawl}, email={email}
+
+    def get_emails_by_country_code(self, code: str):
+        with self.connection as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"""
+                    SELECT * 
+                    FROM municipality_email AS me
+                    JOIN  municipality On me.municipality_id = municipality.id
+                    JOIN state ON state.id = municipality.state_id
+                    WHERE state.country_code = '{code}'
+                    """
+                )
+                colnames = [desc[0] for desc in cursor.description]
+                result = cursor.fetchall()
+                return pd.DataFrame(data=result, columns=colnames)
+
     def get_summary_crawl_status(self):
         with self.connection as connection:
             with connection.cursor() as cursor:

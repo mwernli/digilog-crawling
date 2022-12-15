@@ -149,7 +149,7 @@ class EmailAnalysis:
 
 
 
-    def run_cases(self):
+    def run_cases(self, municipality_min: int = None, municipality_max:int = None):
         if self.mode == EmailAnalysisMode(0): #single
             self.email_contact, self.email_contact_list = self.get_email_similarity()
 
@@ -162,7 +162,12 @@ class EmailAnalysis:
             self.process_municipalities(mun_df=mun_df)
 
         elif self.mode == EmailAnalysisMode(2):
-            pass
+            mun_df = self.ds.postgres.interact_postgres_df(
+                f'''
+                select id, name_de, url from digilog.digilog.municipality where id >= {municipality_min} and id <= {municipality_max};
+                '''
+            )
+            self.process_municipalities(mun_df=mun_df)
         elif self.mode == EmailAnalysisMode(3):
             pass
 

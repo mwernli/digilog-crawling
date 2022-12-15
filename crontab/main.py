@@ -11,6 +11,7 @@ from multiprocessing import log_to_stderr, get_logger
 import datetime
 import numpy as np
 import subprocess
+import argparse
 sys.path.insert(1,'/home/gerj/Documents/GitHub/digilog-crawling/analysis/')
 from DataSourceSlim import DataSourceSlim
 
@@ -59,10 +60,22 @@ def run_crawling_simple(munic):
     #     'crawltype': 'simple'
     #     })
 
+def parse_opt():
+    # opts, args = getopt.getopt(sys.argv[1:], 'c:', ['country'])
+    # parsed_args = {}
+    # parsed_args['country'] = None
+    # for opt, arg in opts:
+    #     if opt == '-c' or opt == '--country':
+    #         parsed_args['country'] = arg
+    # return parsed_args
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--country', metavar='', required=False, type=str, help='enter country name based on name_en in the "country" table')
+    return parser.parse_args()
 
 
 if __name__ == '__main__':
-    df = get_gde_url()
+    parsed_args = parse_opt()
+    df = get_gde_url(parsed_args.country)
     urls = [tuple(line) for line in df.to_numpy()]
     url_bools = [bool(re.match('http://', url)) or bool(re.match('https://', url)) for url, name in urls]
 
@@ -83,6 +96,8 @@ if __name__ == '__main__':
             pass
             # print(i)
     os.chdir(os.path.join(os.getcwd(), '../crontab'))
+
+
 
     # logger.info('end process')
 

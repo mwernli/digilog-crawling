@@ -3,7 +3,17 @@ import pandas as pd
 import os
 
 
-def get_gde_url():
+def get_gde_url(country:str = None):
+    if country is None:
+        sql_statement = 'select url, name_de from municipality;'
+    else:
+        sql_statement = f"""
+        SELECT m.url, m.name_de 
+        FROM municipality AS m
+        JOIN state ON state.id = m.state_id
+        JOIN country ON state.country_code = country.code
+        WHERE country.name_en = '{country}';
+        """
     try:
         if bool(int(os.environ['OUTSIDE_NETWORK'])):
             host = 'localhost'
@@ -24,7 +34,7 @@ def get_gde_url():
 
     engine = create_engine(connection_string)
 
-    result = engine.execute('select url, gdename from loc_gov_ch;')
+    result = engine.execute(sql_statement)
 
     columns_crawl = ['url', 'gdename']
     df = pd.DataFrame(result, columns=columns_crawl)
