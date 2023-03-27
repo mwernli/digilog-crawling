@@ -29,7 +29,7 @@ jedi==0.18.0
 jellyfish==0.9.0
 Jinja2==3.0.3
 jmespath==1.0.0
-joblib==1.1.0
+joblib==1.2.0
 kiwisolver==1.4.4
 langcodes==3.2.1
 lxml==4.9.0
