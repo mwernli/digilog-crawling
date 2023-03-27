@@ -134,5 +134,8 @@ dmypy.json
 
 .idea/
 **/.idea
+
 # sublime text
 digilog.sublime-workspace
+digilog-cluster.sublime-project
+digilog-cluster.sublime-workspace
