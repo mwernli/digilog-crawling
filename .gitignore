@@ -139,3 +139,6 @@ dmypy.json
 digilog.sublime-workspace
 digilog-cluster.sublime-project
 digilog-cluster.sublime-workspace
+
+# Local Data
+/analysis/data/
