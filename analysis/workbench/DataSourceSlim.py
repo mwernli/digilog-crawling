@@ -193,19 +193,6 @@ class PostresDbConnection:
         result = cursor.fetchall()
         return pd.DataFrame(data=result, columns=colnames)
 
-    def get_crawls_with_name(self, pattern):
-        cursor = self.connection.cursor()
-        sql_statement = f'''
-        SELECT * 
-        FROM crawl
-        WHERE top_url LIKE '%{pattern}%'
-        '''
-        cursor.execute(sql_statement)
-        colnames = [desc[0] for desc in cursor.description]
-        result = cursor.fetchall()
-        return pd.DataFrame(data=result, columns=colnames)
-
-
     def insert_crawl_status(self, crawl_id: int, status: str):
         with self.connection as connection:
             with connection.cursor() as cursor:

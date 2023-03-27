@@ -44,7 +44,7 @@ class IDataAnalysis(metaclass=ABCMeta):
 
     def get_logger(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        logfilename = os.path.join(dir_path, 'analyzer.log')
+        logfilename = os.path.join(dir_path, '../analyzer.log')
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
         file_handler = logging.FileHandler(logfilename)
@@ -193,6 +193,7 @@ class IDataAnalysis(metaclass=ABCMeta):
         return 0
 
     def run_analysis(self) -> int:
+        status = self.run_transparency_analysis()
         status = self.run_keyword_analysis()
         status = self.run_social_media_analysis()
         status = self.run_login_analysis()
@@ -384,6 +385,10 @@ class AnalysisFactory:
                 return AnalysisQueued(*args, **kwargs)
             else:
                 return instance
+        if analysis_type == 'queued_v1.0':
+            instance = AnalysisQueued.get_instance()
+            if instance is None:
+                return AnalysisQueued(*args, **kwargs)
         if analysis_type == 'all':
             return AnalysisAll(*args, **kwargs)
         if analysis_type == 'single':

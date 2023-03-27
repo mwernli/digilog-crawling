@@ -1,6 +1,7 @@
 import os
 from time import sleep
-from DataAnalysis import DataAnalysisContext
+# from DataAnalysis import DataAnalysisContext
+from DataAnalysis._DataAnalysisContext import DataAnalysisContext
 import getopt
 import sys
 import logging
@@ -43,7 +44,8 @@ def process_queue():
                 sleep(5)
                 if counter == 0:
                     # da.logger.info('Waiting for crawls to analyze')
-                    pass
+                    print('waiting for crawls')
+                    # pass
                 counter = (counter + 1) % 12
 
 

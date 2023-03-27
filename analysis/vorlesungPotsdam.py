@@ -30,6 +30,9 @@ def get_counts(result):
     return df_counts
 
 
+
+
+
 if __name__ == '__main__':
     crawl_id = 4246
     if crawl_id is None:
