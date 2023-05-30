@@ -118,6 +118,9 @@ class MongoDbConnection:
     def close(self):
         self.client.close()
 
+    def get_results_by_crawl(self, crawl_id: int) -> list:
+        return [item for item in self.db.simpleresults.find({'crawl_id': crawl_id})]
+
 
 class PostresDbConnection:
     """docstring for PostresDbConnection"""

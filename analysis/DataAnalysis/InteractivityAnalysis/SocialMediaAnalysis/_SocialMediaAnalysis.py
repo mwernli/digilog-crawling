@@ -8,12 +8,15 @@ class SocialMediaAnalysis:
             self.crawl_id = kwargs['crawl_id']
         else:
             self.crawl_id = None
+        if 'crawlresults' in list(kwargs.keys()):
+            self.crawlresults = kwargs['crawlresults']
+        else:
+            self.crawlresults = None
         self.social_media_score = None
         self.instagram_names = []
         self.facebook_names = []
         self.youtube_names = []
         self.twitter_names = []
-        self.crawlresults = None
         self.links = None
         self.hrefs = None
         self.link_names = None
@@ -50,7 +53,7 @@ class SocialMediaAnalysis:
         return "crawl_id: %s\ntop_url: %s\nscore: %s/%s\nFacebook account: %s\nTwitter account: %s\nInstagram account: %s\nYoutube account: %s\n" % \
                (self.crawl_id,
                 self.ds.postgres.interact_postgres(
-                    f'select top_url from crawl where id = {self.crawl_id}'),
+                    f'SELECT top_url FROM crawl WHERE id = {self.crawl_id}'),
                 self.social_media_score,
                 len(list(self.social_media_dict.keys())),
                 self.social_media_dict['facebook']['account'],
@@ -67,7 +70,8 @@ class SocialMediaAnalysis:
     def get_crawl_results(self):
         if self.crawl_id is None:
             raise 'If not provided at __ini__ crawl_id must be provided before calling method get_crawl_result()'
-        self.crawlresults = [item for item in self.ds.mongo.db.simpleresults.find({'crawl_id': self.crawl_id})]
+        if self.crawlresults is None:
+            self.crawlresults = [item for item in self.ds.mongo.db.simpleresults.find({'crawl_id': self.crawl_id})]
         self.links = [(tag.get_text(), tag.get('href')) for page in self.crawlresults for tag in
                       BeautifulSoup(page['html'], features='html.parser').find_all('a')]
         self.hrefs = [href for text, href in self.links]
@@ -113,6 +117,9 @@ class SocialMediaAnalysis:
         if len(self.social_media_dict['facebook']['names']) > 0:
             self.social_media_dict['facebook']['account'] = self.social_media_dict['facebook']['names'][0]
             self.social_media_score += 1
+
+        self.social_media_score = self.social_media_score/len(list(self.social_media_dict.keys()))
+
 
     def calculate_score(self):
         score = 0
@@ -162,11 +169,18 @@ class SocialMediaAnalysis:
         return sorted_keys, sorted_values
 
 class SocialMediaAnalysisContext:
-    def __init__(self, crawl_id):
-        self.crawl_id = crawl_id
+    def __init__(self, **kwargs):
+        if 'crawl_id' in list(kwargs.keys()):
+            self.crawl_id = kwargs['crawl_id']
+        else:
+            self.crawl_id = None
+        if 'crawlresults' in list(kwargs.keys()):
+            self.crawlresults = kwargs['crawlresults']
+        else:
+            self.crawlresults = None
 
     def __enter__(self) -> SocialMediaAnalysis:
-        self._sma = SocialMediaAnalysis(crawl_id=self.crawl_id)
+        self._sma = SocialMediaAnalysis(crawl_id=self.crawl_id, crawlresults=self.crawlresults)
         return self._sma
 
     def __exit__(self, exc_type, exc_val, exc_tb):
